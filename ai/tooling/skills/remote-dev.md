@@ -11,17 +11,21 @@
 2. **判定** —— 是代码任务吗?哪个项目?涉及哪些 repo?不是代码任务就正常回答,不走本流程。
 3. **任务 id** —— 取 `<简短英文描述>-<MMDD>`,如 `retry-logic-0519`。
 4. **预侦察** —— 在主仓库里读相关代码,定位要改的文件、入口函数、参考实现、要避开的坑。
-5. **建隔离区**:
+5. **建隔离区**(在 shell 里跑):
    ```
    worktree-task create \
-     --config <ai 仓>/tooling/dev-project.json \
+     --config ~/work/ai-work-os/ai/tooling/dev-project.json \
      --task <id> --repos <涉及的repo>,ai
    ```
    `ai` 总是带上 —— worker 要靠它读上下文。
 6. **填任务卡** —— 编辑 `<worktree_root>/<id>/TASK.md`:需求、验收标准、第 4 步的代码地图。
-7. **spawn worker** —— 起一个一次性 agent,cwd = `<worktree_root>/<id>/<主repo>`,
-   起始 prompt:「先读 `../TASK.md` 和 `ai/ai.md`,按 `CLAUDE.md` 的 TDD 铁律执行」。
-8. **转达** —— worker 回报后,把结果转给 renjinxi。
+7. **spawn worker** —— 用 `nerve_spawn` 工具:`adapter`=`claude`、`name`=`worker-<id>`、
+   `cwd`=`<worktree_root>/<id>/<主repo>`、`channel_id`=当前频道。然后用 `nerve_dm`
+   给 `worker-<id>` 发起始指令:
+   > 你是 worker。先读 `../TASK.md`(任务卡)和 `ai/ai.md`(项目入口),
+   > 按 `CLAUDE.md` 的 TDD 铁律执行;完成后 push 分支 `task/<id>` 并在频道回报。
+8. **转达 + 收尾** —— worker 回报后转达给 renjinxi;确认无误后用 `nerve_remove`
+   清掉 `worker-<id>`,不留 idle agent。
 
 ## 角色:worker(一次性 agent,cwd 在 worktree)
 
@@ -30,7 +34,8 @@
 3. **验证** —— 跑全量 build + test + lint,按 `CLAUDE.md` 完成验证清单逐项卡门。
 4. **提交** —— commit(附改动说明);push 分支 `task/<id>`(nerve 双 remote 都推)。必要时建 MR。
 5. **收尾沉淀** —— 把这次"确认有效"的踩坑/规范写回 `ai/knowledge/`(过滤器,不是水龙头)。
-6. **回报 + 自退** —— 频道回报:分支、commits、测试结果、MR、待确认项。然后停掉自己。
+6. **回报** —— 用 `nerve_post` 在频道回报:分支、commits、测试结果、MR、待确认项。
+   报完即停手,不必自退 —— 由 dispatcher `nerve_remove` 清理(清理是 lead 的事)。
 
 ## 铁律
 
