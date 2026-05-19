@@ -45,6 +45,13 @@ make_repo() { # sandbox 名字 [基线分支=dev]
   git init -q -b "$base" "$r"
   git -C "$r" -c user.name=t -c user.email=t@t commit -q --allow-empty -m init
 }
+make_cloned_repo() { # sandbox 名字  -> repos/<名字> 是 clone:本地只有 main,基线 dev 仅在 origin
+  local up="$1/upstream-$2"
+  git init -q -b main "$up"
+  git -C "$up" -c user.name=t -c user.email=t@t commit -q --allow-empty -m init
+  git -C "$up" branch dev
+  git clone -q "$up" "$1/repos/$2"
+}
 write_config() { # sandbox [repo:base ...]  默认 myrepo:dev  -> 打印配置文件路径
   local sb="$1"; shift
   [[ $# -gt 0 ]] || set -- myrepo:dev
@@ -139,6 +146,16 @@ echo "[8] 未知命令打印用法并非零退出"
 rc=0; out="$("$WT" bogus 2>&1)" || rc=$?
 assert_eq "1" "$rc" "未知命令退出码 1"
 assert_contains "$out" "用法" "打印了用法说明"
+
+# ── 用例 9:基线分支只在远程(clone 来的仓)时仍切到 task 分支 ────
+echo "[9] create:基线分支只在远程时仍切到 task 分支"
+SB="$(make_sandbox)"
+make_cloned_repo "$SB" myrepo
+CFG="$(write_config "$SB")"
+"$WT" create --config "$CFG" --task t9 --repos myrepo > /dev/null 2>&1
+assert_eq "task/t9" "$(git -C "$SB/wt/t9/myrepo" branch --show-current 2>/dev/null)" "分支是 task/t9(非 dev)"
+assert_absent "$SB/wt/t9/dev" "无多余 dev 目录"
+rm -rf "$SB"
 
 echo
 echo "PASS=$PASS FAIL=$FAIL"

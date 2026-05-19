@@ -47,8 +47,18 @@ case "$cmd" in
     IFS=',' read -ra repo_list <<< "$repos"
     for repo in "${repo_list[@]}"; do
       base="$(jq -r --arg r "$repo" '.repos[$r].base' "$config")"
-      log "  worktree: $repo (base $base) -> 分支 task/$task"
-      git -C "$repos_root/$repo" worktree add "$task_dir/$repo" -b "task/$task" "$base"
+      repo_path="$repos_root/$repo"
+      # 解析基线:优先本地分支,否则 origin/<base>;再传给 worktree add 显式起点。
+      # 直接传 "dev" 这种名字会触发 worktree add 的远程 DWIM,无视 -b、错切到 dev。
+      if git -C "$repo_path" show-ref --verify --quiet "refs/heads/$base"; then
+        start="$base"
+      elif git -C "$repo_path" show-ref --verify --quiet "refs/remotes/origin/$base"; then
+        start="origin/$base"
+      else
+        die "基线分支不存在: $base（repo $repo)"
+      fi
+      log "  worktree: $repo (base $start) -> 分支 task/$task"
+      git -C "$repo_path" worktree add --no-track "$task_dir/$repo" -b "task/$task" "$start"
     done
     cat > "$task_dir/TASK.md" <<EOF
 # 任务:$task
