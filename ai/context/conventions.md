@@ -71,8 +71,7 @@ nerve 的 AI 对话是任务型,server buffer 是 source of truth。AI 默认按
 
 ### WS 心跳(半开连接)
 
-nerve `PluginBase`(外部插件客户端)原本无心跳。机器睡眠/网络抖动后客户端那侧不收到 `close` 事件 → 重连不触发 → 插件卡死 offline。
-修复(commit `e561f5c`,2026-05-18 在 dev 分支):PluginBase 客户端 + server 端双向心跳。**(临时,WS 心跳修复发版后删除)** 未发版前:插件卡 offline 手动 `pkill -f <plugin-path>`,ServiceSupervisor 会重拉。
+WS 半开连接会导致节点假在线:机器睡眠/网络抖动后客户端不收到 `close` → 重连不触发 → 插件卡死 offline。nerve 已在 PluginBase 客户端 + server 端实现双向心跳检测处理此问题。
 
 ### Agent 执行被消息打断
 

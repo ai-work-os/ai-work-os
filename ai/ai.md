@@ -27,7 +27,7 @@
 | `ai/` 内 | 内容 |
 |---|---|
 | `ai.md` | 这个文件,super-project 级入口 |
-| `ai-coding/` | AI 工具配置 —— `skills/` · `mcp.json` · `commands/`。真相源,工具原生位置由它派生 |
+| `ai-coding/` | AI 编码工具配置 —— `skills/` · `worktree-task/` · `dev-project.json` 等;`mcp.json`/`commands/` 待第 3 件落地 |
 | `context/architecture.md` | ai-work-os 架构地图:子仓库、核心概念、需求入口 |
 | `context/playbook.md` | 操作手册:跑/构建/测试/发版/home 运维 |
 | `context/conventions.md` | 稳定约定 + 常见坑 |
