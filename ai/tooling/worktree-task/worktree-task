@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+# worktree-task — 多仓库任务工作区管理(非交互、项目无关、读 JSON 配置)
+#
+#   worktree-task create --config <p> --task <id> --repos <r1,r2>
+#   worktree-task list   --config <p>
+#   worktree-task remove --config <p> --task <id>
+set -euo pipefail
+
+die() { echo "worktree-task: $*" >&2; exit 1; }
+log() { echo "[worktree-task] $*" >&2; }
+usage() {
+  cat >&2 <<'EOF'
+worktree-task — 多仓库任务工作区管理
+
+用法:
+  worktree-task create --config <p> --task <id> --repos <r1,r2>
+  worktree-task list   --config <p>
+  worktree-task remove --config <p> --task <id>
+EOF
+}
+
+cmd="${1:-}"
+shift || true
+
+config="" task="" repos=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --config) config="$2"; shift 2 ;;
+    --task)   task="$2";   shift 2 ;;
+    --repos)  repos="$2";  shift 2 ;;
+    *) shift ;;
+  esac
+done
+
+case "$cmd" in create|list|remove)
+  [[ -f "$config" ]] || die "config 文件不存在: ${config:-（未提供 --config）}"
+;; esac
+
+case "$cmd" in
+  create)
+    repos_root="$(jq -r '.repos_root' "$config")"
+    worktree_root="$(jq -r '.worktree_root' "$config")"
+    task_dir="$worktree_root/$task"
+    [[ -e "$task_dir" ]] && die "任务工作区已存在: $task_dir（先 remove,或换 task id）"
+    log "create task=$task repos=$repos config=$config"
+    mkdir -p "$task_dir"
+    IFS=',' read -ra repo_list <<< "$repos"
+    for repo in "${repo_list[@]}"; do
+      base="$(jq -r --arg r "$repo" '.repos[$r].base' "$config")"
+      log "  worktree: $repo (base $base) -> 分支 task/$task"
+      git -C "$repos_root/$repo" worktree add "$task_dir/$repo" -b "task/$task" "$base"
+    done
+    cat > "$task_dir/TASK.md" <<EOF
+# 任务:$task
+
+> 由 dispatcher 蒸馏需求后填写。worker 进 worktree 后先读本文件。freestanding,不进 git。
+
+## 需求
+
+<做什么、为什么>
+
+## 验收标准
+
+<怎样算完成>
+
+## 代码地图
+
+<相关文件、入口、参考实现、要避开的坑>
+
+## 涉及仓库
+
+$repos
+EOF
+    log "created: $task_dir"
+    ;;
+
+  list)
+    worktree_root="$(jq -r '.worktree_root' "$config")"
+    for d in "$worktree_root"/*/; do
+      [[ -d "$d" ]] || continue
+      basename "$d"
+    done
+    ;;
+
+  remove)
+    repos_root="$(jq -r '.repos_root' "$config")"
+    worktree_root="$(jq -r '.worktree_root' "$config")"
+    task_dir="$worktree_root/$task"
+    log "remove task=$task config=$config"
+    while IFS= read -r repo; do
+      wt="$task_dir/$repo"
+      [[ -d "$wt" ]] || continue
+      log "  removed worktree: $repo"
+      git -C "$repos_root/$repo" worktree remove --force "$wt"
+    done < <(jq -r '.repos | keys[]' "$config")
+    rm -rf "$task_dir"
+    log "removed: $task_dir"
+    ;;
+
+  *)
+    usage
+    exit 1
+    ;;
+esac
