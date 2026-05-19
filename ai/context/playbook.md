@@ -18,11 +18,12 @@ npm run build   # = tsc
 # 生产启动(跑 dist)
 node dist/cli.js serve
 
-# 测试
-npm test                  # 全量 vitest run
-npm run test:unit         # 单元测试
-npm run test:integration  # 集成测试
+# 测试(test/{unit,integration,e2e,legacy,fixtures,helpers})
+npm test                  # 只跑单元测试(秒级)
+npm run test:unit         # 同上
+npm run test:integration  # 集成测试(并行)
 npm run test:e2e          # e2e 测试
+npm run test:all          # 全量(unit + integration + e2e)
 ```
 
 **注:** 工作路径是 `~/work/worktree/ai-work-os/nerve/`(dev 分支)。`nerve-server` 命令封装了常用操作(见 `ai-coding/skills/nerve-server.md`)。
@@ -287,6 +288,27 @@ sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 ```
 
 装好后把 `ANDROID_HOME` 和那两段 PATH 也写进 `~/.profile`。注：Android 真机验证无法在 home 自动化，仍需回手机点。
+
+### feishu-bridge 配置
+
+凭据文件 `~/.nerve/feishu.json`(含 app_id / app_secret,chmod 600,**不进 git**)。飞书后台必须开启**长连接模式**,并订阅 `im.message.receive_v1` 事件,否则收不到消息。
+
+### duty-monitor 动态命令
+
+DM 发给 `duty-monitor`:
+
+| 命令 | 含义 |
+|---|---|
+| `add HH:MM @target 消息` | 每天固定时间触发 |
+| `add every:Xm @target 消息` | 每 X 分钟触发 |
+| `add DDD:HH:MM @target 消息` | 指定星期(MON/TUE/...)+时间 |
+| `remove <名称>` | 删除任务 |
+| `list` | 查看任务列表 |
+| `trigger <名称>` | 立即触发 |
+| `status` | 显示运行状态 |
+| `reload` | 从磁盘重新加载任务 |
+
+任务持久化在 `~/.nerve/duty-tasks.json`。
 
 ### 不要踩的坑
 

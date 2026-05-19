@@ -58,7 +58,7 @@
 
 ## TUI 终端客户端
 
-**tui-visual-upgrade** — design/partial — `notes/tasks/tui-visual-upgrade/` — TUI 视觉体系升级设计（方案 B，output rendering + opencode 对齐）。
+**tui-visual-upgrade** — spec+plan-done/impl-pending — `notes/tasks/tui-visual-upgrade/` — TUI 视觉体系升级设计（方案 B，output rendering + opencode 对齐）。spec(`opencode-alignment-spec.md`)和 plan(`opencode-alignment-plan.md`)已完成，实现待开始。
 
 **tui-program-node-log-retention** — design — `notes/tasks/tui-program-node-log-retention/` — 程序节点 TUI 视图切换时保留最近日志输出的设计。
 
@@ -76,7 +76,7 @@
 
 **duty-system-monitoring-20260514** — captured — `notes/tasks/duty-system-monitoring-20260514/` — duty 系统监控设计（待讨论）：L2 任务级监控，确认 duty 任务是否正确执行。
 
-**system-watchdog-20260514** — implemented-not-deployed — `notes/tasks/system-watchdog-20260514/` — system-watchdog L1 系统级节点监控设计，home 部署决策待定。
+**system-watchdog-20260514** — deployed(mac + home, 2026-05-14) — `notes/tasks/system-watchdog-20260514/` — system-watchdog L1 系统级节点监控设计，已实际部署到 mac + home 两端。v1 只能检测 hang/leak，看不到被 kill 移除的节点。
 
 **daily-review-personal-team-20260510** — configured — `notes/tasks/daily-review-personal-team-20260510/` — 每日回顾：个人优先 + 团队动态，已配置 duty 任务。
 

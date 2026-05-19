@@ -45,6 +45,11 @@
 
 - nerve 服务端:关键路径必须有日志,新增/修改模块必须有测试。
 - 程序节点输出:关键状态写 DM 视图(node.log),业务动作走频道(channel.post)—— 两条路互不干扰。
+- 插件 adapter 必须填 `commands` + `usage` 字段 —— AI 和人都靠这个知道怎么用插件。
+- 客户端发消息**不要加 `node_name:` 前缀** —— 服务端已统一处理,加了反而格式出错。
+- 插件等频道用事件驱动(`channel.nodeJoined`),不要 poll;集成测试避免 hardcoded sleep,用事件驱动 + waitFor。
+- worktree 任务文件(TASK.md / plan.md / progress.md)freestanding 放 worktree 根目录,不属任何 git 仓,天然被各子仓 worktree 共享。需要软链才能"够得着"上下文 = 结构错位信号(例外:适配外部工具写死的文件名如 CLAUDE.md)。
+- worker 收尾时将本次发现的坑/规范写回 `ai/context/`,随代码一起 commit —— "过滤器不是水龙头"。
 
 ---
 
@@ -102,3 +107,19 @@ ACP `usage_update` 的 `cost` 字段是 `{amount, currency}` 对象,不是数字
 ### mac-clipboard 已切 ServiceSupervisor 托管
 
 mac-clipboard 已从 launchd 改为 nerve ServiceSupervisor 管理(2026-05-17)。配置在 `~/.nerve/services.json`。launchd plist 已 `bootout` 并改名为 `.disabled`。不要再试图用 launchd 管 mac-clipboard。
+
+### `import.meta.url` 路径层数
+
+移动插件文件后,`import.meta.url` 计算的 `../` 层数必须同步调整,否则 program node spawn 时找不到 plugin 文件(ESM 没有 `__dirname`)。这是改目录结构必踩的坑。
+
+### system-watchdog 集成测试隔离
+
+system-watchdog v1 看不到被 kill 移除的节点(只能测 hang/leak)。集成测试须设置 `WATCHDOG_SILENCE_FILE` 环境变量隔离 watchdog 行为,防干扰其他测试。
+
+### Android ColorOS 后台冻结
+
+ColorOS 会冻结整个 app 进程。需在系统设置中给 nerve-app 开启后台白名单,否则 socket 连接和录音进程均被杀。nerve-app 的 GitLab 默认分支已从 `dev` 改为 `main`。
+
+### 频道消息不支持二进制/大 blob
+
+频道消息只传文本。图片等大 blob 走专用 HTTP 端点,严禁把 base64 塞进频道消息 —— 历史上曾导致 buffer 内存飙至 2.3GB。
