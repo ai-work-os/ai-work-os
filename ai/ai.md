@@ -44,8 +44,12 @@
 | 主题 | 文件 |
 |---|---|
 | ai/ 目录约定(三层标准 + 内部分区 + 真相源模型) | `knowledge/specs/directory-convention.md` |
-| 远程开发流程(手机发起 → home 隔离 worktree 执行) | `knowledge/specs/remote-dev-flow.md` |
-| home server 部署 / 运维 | `knowledge/runbooks/home-deploy.md` |
+| 远程开发流程(设计) | `knowledge/specs/remote-dev-flow.md` |
+| 远程开发 playbook(dispatcher / worker 怎么做) | `tooling/skills/remote-dev.md` |
+| worktree-task 工具 + ai-work-os 项目配置 | `tooling/worktree-task/` · `tooling/dev-project.json` |
+| dispatcher 角色 prompt | `tooling/dispatcher-prompt.md` |
+| home 部署 / 运维 | `knowledge/runbooks/home-deploy.md` |
+| home 开发工具链 | `knowledge/runbooks/home-toolchain.md` |
 | nerve-server 管理脚本(服务/构建/发版/部署) | `tooling/skills/nerve-server.md` |
 
 (其他遇到再加,空目录是合法状态)
