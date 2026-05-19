@@ -225,8 +225,6 @@ ssh home '
 | 80 | nginx | APK 发版 `/var/www/html/nerve-app.apk` + `nerve-app-version.json` |
 | 22 | sshd | ssh alias `home` |
 
-**2026-05-19 巡检验证:** 4800/4810/4811/4812 均在监听,nerve + nerve-log-collector + xvfb 全部 running。
-
 ### 日志路径速查
 
 | 路径 | 内容 |
@@ -295,5 +293,5 @@ sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 - **不要 `sudo systemctl ...`** — system-level 那个 nerve.service 是死的，user-level 才是活的
 - **改完 nerve TS 必须 `npm run build`** —— 光 `git pull` 不生效（跑的是 dist）
 - **加 env 必须 `daemon-reload`**（不然新 env 不生效）
-- **ai-life-log auto-spawn 条件**：darwin OR `AI_LIFE_LOG_REMOTE_UPLOAD=true`（commit `376c2b7` 修过 Linux 原本被 skip 的 bug）
+- **ai-life-log auto-spawn 条件**：darwin OR `AI_LIFE_LOG_REMOTE_UPLOAD=true`（修过 Linux 原本被 skip 的 bug）
 - **新增 npm 依赖后 home 上要跑 `npm install`** —— 不然 plugin spawn 时 ERR_MODULE_NOT_FOUND 反复 restart，旧进程堆积
