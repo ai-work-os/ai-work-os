@@ -187,7 +187,15 @@ journalctl --user -u nerve -n 100                # service stdout / stderr
 ~/.config/systemd/user/nerve.service.d/
 ├── cwd.conf      # WorkingDirectory + ExecStart override
 ├── gemini.conf   # GEMINI_API_KEY
-└── lifelog.conf  # AI_LIFE_LOG_REMOTE_UPLOAD / HTTP_PORT / TOKEN / AUDIO_RETAIN_DAYS
+├── lifelog.conf  # AI_LIFE_LOG_REMOTE_UPLOAD / HTTP_PORT / TOKEN / AUDIO_RETAIN_DAYS
+└── path.conf     # PATH 加 ~/.local/bin(让 nerve 子进程能找到 worktree-task 等)
+```
+
+**path.conf 内容**(新 host 必加,否则 dispatcher 跑 worktree-task 等命令会 command not found):
+
+```
+[Service]
+Environment="PATH=/home/<user>/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
 ```
 
 加新 env：写 `.conf` → `systemctl --user daemon-reload` → `systemctl --user restart nerve`。
@@ -348,3 +356,4 @@ DM 发给 `duty-monitor`:
 - **加 env 必须 `daemon-reload`**（不然新 env 不生效）
 - **ai-life-log auto-spawn 条件**：darwin OR `AI_LIFE_LOG_REMOTE_UPLOAD=true`（修过 Linux 原本被 skip 的 bug）
 - **新增 npm 依赖后 home 上要跑 `npm install`** —— 不然 plugin spawn 时 ERR_MODULE_NOT_FOUND 反复 restart，旧进程堆积
+- **systemctl --user 默认 PATH 不含 `~/.local/bin`** —— nerve 服务的 dispatcher 跑 `worktree-task` 等会 command not found,必须配 `nerve.service.d/path.conf`(见上节)
