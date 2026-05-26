@@ -6,14 +6,14 @@
 
 ### 仓库结构与 git 流程
 
-- **多仓结构:** nerve / nerve-app / nerve-tui / ai 是四个独立 git 仓库,各自有 `.git`。任务 worktree 在 `~/work/worktree/ai-work-os/<task-id>/<repo>/` 下,由 `start-task` skill 创建。
-- **开发在 worktree dev 分支,不在主仓库改代码**。提交: `git -C ~/work/worktree/ai-work-os/nerve commit`。合并到 main: `git -C ~/work/ai-work-os/nerve merge dev`。
-- **双 remote push(nerve):** nerve 仓配了两个 remote — `origin`(GitHub) + `gitlab`(公司 GitLab)。推送必须两个都推,不能漏。`git push origin main && git push gitlab main`。
+- **多仓结构:** 根仓库 `ai-work-os` + 三个代码仓 `nerve` / `nerve-app` / `nerve-tui`(各自独立 git)。根 `.gitignore` 屏蔽代码仓。
+- **开发在任务 worktree 内(`task/<id>` 分支)**,不在主仓库改代码。worktree 由 `start-task` skill 自动创建,结构跟主仓库 100% 镜像。提交: `git -C <worktree>/<repo> commit`。
+- **双 remote push:** 所有仓库(根 + 三代码仓)都配了 `origin`(GitHub) + `gitlab`(公司 GitLab),推送两个都要推。
 - commit 时若 hook 报错,需要 `GVM_ROOT="" git commit ...`。
 
 ### 测试规则
 
-- **永远在 worktree dev 分支测试**,不在主分支测未验证改动。
+- **测试在任务 worktree 内跑**,不在主分支测未验证改动。
 - **nerve 测试实例用 4801 端口**,不抢生产 4800。
 - 集成测试必须随机端口 + 临时数据目录隔离(详见 `context/playbook.md` 测试规则节)。
 

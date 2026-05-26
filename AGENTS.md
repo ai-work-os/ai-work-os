@@ -1,6 +1,8 @@
 # ai-work-os — super-project AI 入口
 
 > **如果当前目录或上级目录有 `TASK.md`,那是任务卡,先读它再继续。**
+>
+> **运维相关动作前必读 `ai/context/playbook.md`** —— 启停/构建/测试 nerve、改 systemd / 端口、Android 发版、home 部署。配置和真实服务高度耦合,凭直觉跑命令容易踩坑。
 
 `ai-work-os` 是 monorepo 工作区(根目录 `~/work/ai-work-os/`),它本身是一个 git 仓库,用 `.gitignore` 把内嵌的代码子仓库(`nerve/` `nerve-app/` `nerve-tui/` `nerve-android/`)忽略掉。
 
