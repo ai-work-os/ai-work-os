@@ -18,9 +18,9 @@
      Darwin) CONFIG=~/work/ai-work-os/ai/ai-coding/dev-project.mac.json ;;
      Linux)  CONFIG=~/work/ai-work-os/ai/ai-coding/dev-project.json ;;
    esac
-   worktree-task create --config "$CONFIG" --task <id> --repos <涉及的repo>,ai
+   worktree-task create --config "$CONFIG" --task <id> --repos <涉及的repo>
    ```
-   `ai` 总是带上 —— worker 要靠它读上下文。
+   不要带 `ai` —— `ai/` 是根仓库子目录,worker 直接读 `~/work/ai-work-os/AGENTS.md` 拿上下文。
 6. **填任务卡** —— 编辑 `<worktree_root>/<id>/TASK.md`:需求、验收标准、第 4 步的代码地图。
 7. **spawn worker** —— 用 `nerve_spawn` 工具:`adapter`=`claude`、`name`=`worker-<id>`、
    `cwd`=`<worktree_root>/<id>/<主repo>`、`channel_id`=当前频道。然后用 `nerve_dm`

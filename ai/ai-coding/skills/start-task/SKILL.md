@@ -26,8 +26,9 @@ description: Use when user proposes a new development task in ai-work-os (phrase
 
 ### 3. 判定涉及仓库
 
-ai-work-os 有四仓:`nerve` `nerve-tui` `nerve-app` `ai`。
-判断需求要改哪些。`ai` 仓库总是带上(worker 要靠它读上下文)。
+ai-work-os 有三个代码仓:`nerve` `nerve-tui` `nerve-app`。判断需求要改哪些。
+
+(`ai/` 是根仓库子目录而不是独立仓库,worker 直接读 `~/work/ai-work-os/AGENTS.md` 和 `~/work/ai-work-os/ai/` 拿上下文,不通过 worktree 拉。)
 
 ### 4. 预侦察(在主仓库)
 
@@ -47,7 +48,7 @@ case "$(uname -s)" in
   Darwin) CONFIG=~/work/ai-work-os/ai/ai-coding/dev-project.mac.json ;;
   Linux)  CONFIG=~/work/ai-work-os/ai/ai-coding/dev-project.json ;;
 esac
-worktree-task create --config "$CONFIG" --task <id> --repos <r1,r2>,ai
+worktree-task create --config "$CONFIG" --task <id> --repos <r1,r2>
 ```
 
 完成后会得到 `<worktree_root>/<id>/`,里面每个 repo 是 `task/<id>` 分支(从 main 切)。骨架 `TASK.md` 自动生成,占位符待填。

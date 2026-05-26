@@ -5,7 +5,6 @@
   "repos": {
     "nerve": { "base": "main" },
     "nerve-app": { "base": "main" },
-    "nerve-tui": { "base": "main" },
-    "ai": { "base": "main" }
+    "nerve-tui": { "base": "main" }
   }
 }
