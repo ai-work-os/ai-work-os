@@ -52,7 +52,7 @@ worker 是全新 agent,上下文靠三层喂:
 
 1. **任务卡** `TASK.md` —— dispatcher 把手机对话蒸馏成的需求 + 验收标准 + 代码地图。
    放 worktree 任务根目录(所有 sub-repo worktree 的上一级),freestanding,不进 git。
-2. **项目文档** —— 根仓库 `~/work/ai-work-os/AGENTS.md` + `ai/` 子目录是上下文来源。**worktree-task 待改:**目前 worktree 里不自动 sync 根仓库内容,worker 直接去根仓库目录读。
+2. **项目文档** —— 根仓库 `ai-work-os` 作为 repo 拉进 worktree(`<task_dir>/ai-work-os/AGENTS.md` + `ai/` 子目录)。worker cwd 在 `<task_dir>/<主代码repo>/`,读 `../ai-work-os/AGENTS.md`。
 3. **代码地图** —— dispatcher 预侦察后写进 `TASK.md`。
 
 **飞轮**:worker 收尾时筛出"确认有效的沉淀"写回 `ai/knowledge/`,下个 worker 起点更高。
