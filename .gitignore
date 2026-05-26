@@ -12,6 +12,13 @@
 # 任务追踪软链(指向 ~/.ai/...,各机器各自管,不进根 git)
 /notes
 
+# 任务卡(临时输入,放 worktree 顶层让 worker 读,不进 git;锁定根目录避免误伤子仓里的同名文件)
+/TASK.md
+/plan.md
+/progress.md
+/TODO.md
+/NOTES.md
+
 # 通用
 .DS_Store
 node_modules/

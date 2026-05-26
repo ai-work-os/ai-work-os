@@ -13,25 +13,28 @@ usage() {
 worktree-task — 多仓库任务工作区管理
 
 用法:
-  worktree-task create --config <p> --task <id> [--repos <r1,r2>]
+  worktree-task create --config <p> --task <id> [--type feat|fix|refactor|docs|chore] [--repos <r1,r2>]
   worktree-task list   --config <p>
   worktree-task remove --config <p> --task <id>
 
-注: --repos 不传时默认 config 里所有 repos(全切,省得判断)。
-    如果配置里有 "path": "." 的 root repo,它的 worktree 占 $task_dir 顶层,
-    其他子 repos 嵌套在 $task_dir/<repo>/ 下(跟主仓库结构一致)。
+注:
+  - --type 缺省 feat。分支名 <type>/<task-id>(如 feat/retry-logic-0526)
+  - --repos 不传时默认 config 里所有 repos(全切,省得判断)
+  - 配置里有 "path": "." 的 root repo,worktree 占 $task_dir 顶层,
+    其他子 repos 嵌套在 $task_dir/<repo>/ 下(跟主仓库结构一致)
 EOF
 }
 
 cmd="${1:-}"
 shift || true
 
-config="" task="" repos=""
+config="" task="" repos="" type=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --config) config="$2"; shift 2 ;;
     --task)   task="$2";   shift 2 ;;
     --repos)  repos="$2";  shift 2 ;;
+    --type)   type="$2";   shift 2 ;;
     *) shift ;;
   esac
 done
@@ -50,7 +53,11 @@ case "$cmd" in
     if [[ -z "$repos" ]]; then
       repos="$(jq -r '.repos | keys | join(",")' "$config")"
     fi
-    log "create task=$task repos=$repos config=$config"
+    # 分支命名:遵循 git flow 前缀(feat/fix/refactor/docs/chore/...),不带前缀默认 feat
+    : "${type:=feat}"
+    branch_name="$type/$task"
+    log "create task=$task type=$type repos=$repos config=$config"
+    log "  branch will be: $branch_name"
     mkdir -p "$worktree_root"
 
     # 工具函数:解析 repo path
@@ -104,8 +111,8 @@ case "$cmd" in
       base="$(jq -r --arg r "$root_repo" '.repos[$r].base' "$config")"
       repo_path="$(resolve_repo_path "$root_repo")"
       start="$(resolve_start_ref "$repo_path" "$base" "$root_repo")"
-      log "  worktree(root): $root_repo (base $start) -> $task_dir 分支 task/$task"
-      git -C "$repo_path" worktree add --no-track "$task_dir" -b "task/$task" "$start"
+      log "  worktree(root): $root_repo (base $start) -> $task_dir 分支 $branch_name"
+      git -C "$repo_path" worktree add --no-track "$task_dir" -b "$branch_name" "$start"
     else
       mkdir -p "$task_dir"
     fi
@@ -115,8 +122,8 @@ case "$cmd" in
       base="$(jq -r --arg r "$repo" '.repos[$r].base' "$config")"
       repo_path="$(resolve_repo_path "$repo")"
       start="$(resolve_start_ref "$repo_path" "$base" "$repo")"
-      log "  worktree: $repo (base $start) -> $task_dir/$repo 分支 task/$task"
-      git -C "$repo_path" worktree add --no-track "$task_dir/$repo" -b "task/$task" "$start"
+      log "  worktree: $repo (base $start) -> $task_dir/$repo 分支 $branch_name"
+      git -C "$repo_path" worktree add --no-track "$task_dir/$repo" -b "$branch_name" "$start"
     done
     cat > "$task_dir/TASK.md" <<EOF
 # 任务:$task

@@ -31,15 +31,25 @@ description: Use when user proposes a new development task in ai-work-os (我有
 
 任务 id:`<简短英文描述>-<MMDD>`,例 `retry-logic-0526`。
 
+判定分支类型(`--type`),按 git flow 选:
+
+| type | 用于 |
+|---|---|
+| `feat` | 新功能 / 增能 (缺省) |
+| `fix` | 修 bug |
+| `refactor` | 重构(不改行为) |
+| `docs` | 仅文档 |
+| `chore` | 杂活(构建/CI/依赖等) |
+
 ```bash
 case "$(uname -s)" in
   Darwin) CONFIG=~/work/ai-work-os/ai/ai-coding/dev-project.mac.json ;;
   Linux)  CONFIG=~/work/ai-work-os/ai/ai-coding/dev-project.json ;;
 esac
-worktree-task create --config "$CONFIG" --task <id>
+worktree-task create --config "$CONFIG" --task <id> --type <type>
 ```
 
-工具默认全切,不传 `--repos`。骨架 `TASK.md` 自动写入 `<worktree_root>/<id>/`。
+分支名自动 `<type>/<id>`(例 `fix/retry-logic-0526`)。工具默认全切,不传 `--repos`。骨架 `TASK.md` 自动写入 `<worktree_root>/<id>/`(根 `.gitignore` 屏蔽 TASK.md,不进 git)。
 
 Edit `<worktree_root>/<id>/TASK.md` 替换三个占位符:
 - `<做什么、为什么>` → 澄清后的需求 + 动机
