@@ -1,0 +1,18 @@
+# 子代码仓库(各自独立 git,不进根 git)
+/nerve/
+/nerve-app/
+/nerve-tui/
+/nerve-android/
+
+# 本地环境/工具缓存
+/.claude/
+/.rustup/
+/.superpowers/
+
+# 任务追踪软链(指向 ~/.ai/...,各机器各自管,不进根 git)
+/notes
+
+# 通用
+.DS_Store
+node_modules/
+*.log

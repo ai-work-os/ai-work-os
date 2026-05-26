@@ -1,0 +1,11 @@
+{
+  "project": "ai-work-os",
+  "repos_root": "/Users/renjinxi/work/ai-work-os",
+  "worktree_root": "/Users/renjinxi/work/worktree/ai-work-os",
+  "repos": {
+    "nerve": { "base": "main" },
+    "nerve-app": { "base": "main" },
+    "nerve-tui": { "base": "main" },
+    "ai": { "base": "main" }
+  }
+}

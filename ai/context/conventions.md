@@ -6,7 +6,7 @@
 
 ### 仓库结构与 git 流程
 
-- **多仓结构:** nerve / nerve-app / nerve-tui / notes 是四个独立 git 仓库,各自有 `.git`。`worktree/` 下是 git worktree(`.git` 是指针文件),不是手动复制目录。
+- **多仓结构:** nerve / nerve-app / nerve-tui / ai 是四个独立 git 仓库,各自有 `.git`。任务 worktree 在 `~/work/worktree/ai-work-os/<task-id>/<repo>/` 下,由 `start-task` skill 创建。
 - **开发在 worktree dev 分支,不在主仓库改代码**。提交: `git -C ~/work/worktree/ai-work-os/nerve commit`。合并到 main: `git -C ~/work/ai-work-os/nerve merge dev`。
 - **双 remote push(nerve):** nerve 仓配了两个 remote — `origin`(GitHub) + `gitlab`(公司 GitLab)。推送必须两个都推,不能漏。`git push origin main && git push gitlab main`。
 - commit 时若 hook 报错,需要 `GVM_ROOT="" git commit ...`。

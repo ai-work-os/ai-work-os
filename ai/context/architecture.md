@@ -83,23 +83,6 @@ ai-work-os 是"活着的 AI 操作系统" —— 让 AI 持续工作、人随时
 
 ---
 
-### notes — 文档与任务中心
-
-**职责:** 整个 ai-work-os super-project 的共享文档库 —— 架构文档(ARCHITECTURE.md、API.md)、任务目录(`tasks/`)、里程碑、设计稿。
-
-**不含代码。** 是所有子仓库文档的统一中心。
-
-**仓库地址:** `git@github.com:renjinxi/ai-memory.git`
-
-**本地路径:** `~/work/worktree/ai-work-os/notes/`(只有一个)
-
-**关键文件:**
-- `ARCHITECTURE.md` — nerve 设计理念(管什么/不管什么/三个核心概念)
-- `API.md` — WS JSON-RPC 2.0 + HTTP 端点契约
-- `tasks/` — ~36 个任务目录 + `active.md`(当前活跃任务)
-
----
-
 ## nerve 核心概念
 
 ### 三个核心对象
@@ -157,8 +140,6 @@ ASR 栈:`sherpa-onnx-node` + silero-VAD + SenseVoice ONNX。模型搜索顺序:e
 | 需求类型 | 从哪里找起 |
 |---|---|
 | nerve 服务端逻辑(路由/API/协议) | `nerve/src/` — channel、node、transport、agent 目录 |
-| nerve 协议文档(WS JSON-RPC/ACP) | `notes/API.md` |
-| nerve 设计理念 | `notes/ARCHITECTURE.md` |
 | 新 plugin / 程序节点 | `nerve/src/plugins/` — 参考现有 plugin,继承 `plugin-base.ts` |
 | MCP 工具(nerve_command / nerve_capabilities) | `nerve/src/mcp/nerve-mcp.ts` |
 | 外部 Claude Code 接入频道 | `nerve/src/channel-mcp/nerve-channel.ts` |
@@ -168,6 +149,5 @@ ASR 栈:`sherpa-onnx-node` + silero-VAD + SenseVoice ONNX。模型搜索顺序:e
 | Android 架构设计 | `nerve-app/README.md` |
 | 终端 TUI 客户端 | `nerve-tui/crates/` — nerve-tui-core(逻辑)、nerve-tui(UI) |
 | TUI 终端问题 | `nerve-tui/docs/` + ratatui 官方文档 |
-| 历史任务 / 以前做过什么 | `notes/tasks/` + `context/task-index.md` |
 | 部署/运维 | `context/playbook.md` 的 home 运维节 |
 | 操作命令速查 | `ai-coding/skills/nerve-server.md` |
