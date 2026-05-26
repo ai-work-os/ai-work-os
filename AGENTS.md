@@ -1,5 +1,7 @@
 # ai-work-os — super-project AI 入口
 
+> **如果当前目录或上级目录有 `TASK.md`,那是任务卡,先读它再继续。**
+
 `ai-work-os` 是 monorepo 工作区(根目录 `~/work/ai-work-os/`),它本身是一个 git 仓库,用 `.gitignore` 把内嵌的代码子仓库(`nerve/` `nerve-app/` `nerve-tui/` `nerve-android/`)忽略掉。
 
 | 目录 / 文件 | 是否进根 git | 内容 |
