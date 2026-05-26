@@ -25,7 +25,7 @@ description: Use when user proposes a new development task in ai-work-os (我有
    **这一步最值钱**。worker 拿不到这些就要重新摸代码、浪费一轮。
 3. **建 worktree + 填 TASK.md** —— 见下。
 
-干完报告路径给用户。**到此打住**,worker 由用户自己在新窗口开 Claude Code 启动(AI 工具自动加载 AGENTS.md → AGENTS.md 自动引导读 TASK.md,你不用写"worker 应该读什么")。
+干完报告路径给用户。**到此打住**,worker 由用户自己在新窗口起 AI 编程会话启动(AI 工具自动加载 AGENTS.md → AGENTS.md 自动引导读 TASK.md,你不用写"worker 应该读什么")。
 
 ## 取任务 id
 
@@ -60,7 +60,7 @@ worktree-task create --config "$CONFIG" --task <id>
 发给用户:
 - worktree 路径(主代码仓位置,如 `<worktree_root>/<id>/nerve/`)
 - 任务 id + 分支 `task/<id>`
-- 一句话:切过去开 Claude Code 直接干,AGENTS.md / TASK.md 都会自动加载。
+- 一句话:切过去起 AI 编程会话直接干,AGENTS.md / TASK.md 都会自动加载。
 
 ## 红旗 —— 出现就停
 

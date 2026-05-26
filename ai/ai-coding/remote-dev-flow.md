@@ -4,7 +4,7 @@
 
 | 入口 | 谁触发 | 谁建 worktree | 谁干活 |
 |---|---|---|---|
-| Mac | 用户自己 | 当前 Claude Code(走 start-task) | 用户切到 worktree 开新 Claude Code |
+| Mac | 用户自己 | 当前 AI 会话(走 start-task) | 用户切到 worktree 开新 AI 会话 |
 | 手机 | 用户 → nerve-app | home dispatcher(走 [remote-dev](skills/remote-dev.md)) | dispatcher `nerve_spawn` worker |
 
 两条路得到同样产物:`<worktree_root>/<id>/` —— 结构跟主仓库 100% 镜像。
