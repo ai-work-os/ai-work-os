@@ -46,8 +46,9 @@
 | `AGENTS.md` / `CLAUDE.md` | 本文件(`CLAUDE.md` 是软链)。super-project 级 AI 入口 |
 | `ai/ai-coding/` | AI 编码工具配置真身(skill / 工具 / 平台配置)。软链给 `~/.claude` `~/.codex`。**Mac 上发起新开发任务用 `start-task` skill。** 详见 `ai/ai-coding/README.md`。 |
 | `ai/context/architecture.md` | 架构地图:子仓库结构、nerve 核心概念、需求入口 |
-| `ai/context/playbook.md` | 操作手册:跑/构建/测试/发版/home 运维 |
+| `ai/context/playbook.md` | 操作手册:跑/构建/测试/发版/home 运维 / scene 维护 |
 | `ai/context/conventions.md` | 稳定约定 + 常见坑 |
+| `ai/context/decisions/` | ADR — 设计决定的"为什么"(读它免得撕重) |
 
 ---
 

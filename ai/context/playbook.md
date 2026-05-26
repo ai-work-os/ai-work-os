@@ -289,6 +289,37 @@ sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
 装好后把 `ANDROID_HOME` 和那两段 PATH 也写进 `~/.profile`。注：Android 真机验证无法在 home 自动化，仍需回手机点。
 
+### nerve scene 运维
+
+scene 定义 nerve 启动时自动 spawn 哪些节点 + 怎么初始化它们。
+
+**位置**:
+- 真身 home `~/.nerve/scenes/*.json`(**不进 git**,每台 home 独立)
+- 项目级 dispatcher prompt 真身在 `ai/ai-coding/dispatcher-prompt.md`(进 git),scene 里的 prompt 是从这里 copy 进去的
+
+**当前 dispatcher 配置**(home `~/.nerve/scenes/ai-work-os.json`):
+- 节点 `ai-work-os-agent`,**adapter = codex**(在 scene 配,不在文档/skill 里写)
+- channel `ai-work-os`,auto_create
+- scene 顶层 `on_ready[0].command` = dispatcher prompt(从 dispatcher-prompt.md `---` 之后内容 copy)
+
+**改完 dispatcher-prompt.md 同步到 home scene**:
+
+```bash
+ssh home 'bash -s' <<'EOF'
+set -e
+cp ~/.nerve/scenes/ai-work-os.json /tmp/scene.bak-$(date +%s)
+new=$(sed -n "/^---$/,$p" ~/work/ai-work-os/ai/ai-coding/dispatcher-prompt.md | tail -n +2)
+jq --arg p "$new" '(.on_ready[] | select(.to == "ai-work-os-agent")) .command = $p' \
+  ~/.nerve/scenes/ai-work-os.json > /tmp/scene.new && mv /tmp/scene.new ~/.nerve/scenes/ai-work-os.json
+systemctl --user restart nerve
+sleep 3 && tail -5 ~/.nerve/nerve.log | grep "scene ai-work-os"
+EOF
+```
+
+**reload 时机**:scene 改了**必须 nerve 重启**(`systemctl --user restart nerve`)才生效,nerve 启动时只读一次 scene。
+
+**其他 scene**(`~/.nerve/scenes/` 还有 `duty.json` `companion.json` `erp.json` `screenshot-triage.json` 等),改完同样要 restart。
+
 ### feishu-bridge 配置
 
 凭据文件 `~/.nerve/feishu.json`(含 app_id / app_secret,chmod 600,**不进 git**)。飞书后台必须开启**长连接模式**,并订阅 `im.message.receive_v1` 事件,否则收不到消息。
