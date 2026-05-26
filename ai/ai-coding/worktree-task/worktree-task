@@ -47,7 +47,18 @@ case "$cmd" in
     IFS=',' read -ra repo_list <<< "$repos"
     for repo in "${repo_list[@]}"; do
       base="$(jq -r --arg r "$repo" '.repos[$r].base' "$config")"
-      repo_path="$repos_root/$repo"
+      # path 字段可选:缺省 = $repos_root/$repo;"." = $repos_root 本身(根仓库);
+      # 绝对路径直接用;其余按相对 $repos_root 解析。
+      path_override="$(jq -r --arg r "$repo" '.repos[$r].path // ""' "$config")"
+      if [[ -z "$path_override" ]]; then
+        repo_path="$repos_root/$repo"
+      elif [[ "$path_override" == "." ]]; then
+        repo_path="$repos_root"
+      elif [[ "$path_override" == /* ]]; then
+        repo_path="$path_override"
+      else
+        repo_path="$repos_root/$path_override"
+      fi
       # 解析基线:优先本地分支,否则 origin/<base>;再传给 worktree add 显式起点。
       # 直接传 "dev" 这种名字会触发 worktree add 的远程 DWIM,无视 -b、错切到 dev。
       if git -C "$repo_path" show-ref --verify --quiet "refs/heads/$base"; then
@@ -100,8 +111,19 @@ EOF
     while IFS= read -r repo; do
       wt="$task_dir/$repo"
       [[ -d "$wt" ]] || continue
+      # 同 create 段的 path 解析逻辑
+      path_override="$(jq -r --arg r "$repo" '.repos[$r].path // ""' "$config")"
+      if [[ -z "$path_override" ]]; then
+        repo_path="$repos_root/$repo"
+      elif [[ "$path_override" == "." ]]; then
+        repo_path="$repos_root"
+      elif [[ "$path_override" == /* ]]; then
+        repo_path="$path_override"
+      else
+        repo_path="$repos_root/$path_override"
+      fi
       log "  removed worktree: $repo"
-      git -C "$repos_root/$repo" worktree remove --force "$wt"
+      git -C "$repo_path" worktree remove --force "$wt"
     done < <(jq -r '.repos | keys[]' "$config")
     rm -rf "$task_dir"
     log "removed: $task_dir"

@@ -18,21 +18,21 @@
      Darwin) CONFIG=~/work/ai-work-os/ai/ai-coding/dev-project.mac.json ;;
      Linux)  CONFIG=~/work/ai-work-os/ai/ai-coding/dev-project.json ;;
    esac
-   worktree-task create --config "$CONFIG" --task <id> --repos <涉及的repo>
+   worktree-task create --config "$CONFIG" --task <id> --repos ai-work-os,<涉及的代码 repo>
    ```
-   不要带 `ai` —— `ai/` 是根仓库子目录,worker 直接读 `~/work/ai-work-os/AGENTS.md` 拿上下文。
+   `ai-work-os`(根仓库)总是带上 —— worker 要在 worktree 内读完整上下文(AGENTS.md + ai/)。
 6. **填任务卡** —— 编辑 `<worktree_root>/<id>/TASK.md`:需求、验收标准、第 4 步的代码地图。
 7. **spawn worker** —— 用 `nerve_spawn` 工具:`adapter`=`claude`、`name`=`worker-<id>`、
    `cwd`=`<worktree_root>/<id>/<主repo>`、`channel_id`=当前频道。然后用 `nerve_dm`
    给 `worker-<id>` 发起始指令:
-   > 你是 worker。先读 `../TASK.md`(任务卡)和 `~/work/ai-work-os/AGENTS.md`(根仓库项目入口),
+   > 你是 worker。先读 `../TASK.md`(任务卡)和 `../ai-work-os/AGENTS.md`(根仓库 worktree 副本里的项目入口),
    > 按 `CLAUDE.md` 的 TDD 铁律执行;完成后 push 分支 `task/<id>` 并在频道回报。
 8. **转达 + 收尾** —— worker 回报后转达给 renjinxi;确认无误后用 `nerve_remove`
    清掉 `worker-<id>`,不留 idle agent。
 
 ## 角色:worker(一次性 agent,cwd 在 worktree)
 
-1. **装上下文** —— 读 `../TASK.md`(任务卡)+ `~/work/ai-work-os/AGENTS.md`(根仓库项目入口)+ `CLAUDE.md`(铁律)。
+1. **装上下文** —— 读 `../TASK.md`(任务卡)+ `../ai-work-os/AGENTS.md`(根仓库 worktree 副本)+ `CLAUDE.md`(铁律)。
 2. **TDD** —— 先写失败测试 → 看红 → 最小实现 → 看绿 → 重构。改 nerve 用测试端口 4801。
 3. **验证** —— 跑全量 build + test + lint,按 `CLAUDE.md` 完成验证清单逐项卡门。
 4. **提交** —— commit(附改动说明);push 分支 `task/<id>`(nerve 双 remote 都推)。必要时建 MR。

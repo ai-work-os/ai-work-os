@@ -26,9 +26,9 @@ description: Use when user proposes a new development task in ai-work-os (phrase
 
 ### 3. 判定涉及仓库
 
-ai-work-os 有三个代码仓:`nerve` `nerve-tui` `nerve-app`。判断需求要改哪些。
+代码仓有三个:`nerve` `nerve-tui` `nerve-app`。判断需求要改哪些。
 
-(`ai/` 是根仓库子目录而不是独立仓库,worker 直接读 `~/work/ai-work-os/AGENTS.md` 和 `~/work/ai-work-os/ai/` 拿上下文,不通过 worktree 拉。)
+`ai-work-os`(根仓库,含 AGENTS.md + ai/)**总是带上** —— worker 在 worktree 里要看到完整上下文。
 
 ### 4. 预侦察(在主仓库)
 
@@ -48,7 +48,7 @@ case "$(uname -s)" in
   Darwin) CONFIG=~/work/ai-work-os/ai/ai-coding/dev-project.mac.json ;;
   Linux)  CONFIG=~/work/ai-work-os/ai/ai-coding/dev-project.json ;;
 esac
-worktree-task create --config "$CONFIG" --task <id> --repos <r1,r2>
+worktree-task create --config "$CONFIG" --task <id> --repos ai-work-os,<r1,r2>
 ```
 
 完成后会得到 `<worktree_root>/<id>/`,里面每个 repo 是 `task/<id>` 分支(从 main 切)。骨架 `TASK.md` 自动生成,占位符待填。
@@ -69,7 +69,7 @@ Edit `<worktree_root>/<id>/TASK.md`,替换四个占位符:
 发给用户:
 - worktree 路径(`<worktree_root>/<id>/<主repo>/`)
 - 任务 id 和分支名
-- 一句话总结:他切过去开 Claude Code,worker 自己读 `../TASK.md` 和 `~/work/ai-work-os/AGENTS.md` 就能干
+- 一句话总结:他切过去开 Claude Code,worker 自己读 `../TASK.md` 和 `../ai-work-os/AGENTS.md`(worktree 内)就能干
 
 不主动 spawn worker、不自动进入 worktree 写代码。**到此打住**,把控制权交回用户。
 
