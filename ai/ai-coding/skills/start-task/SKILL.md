@@ -24,11 +24,9 @@ description: Use when user proposes a new development task in ai-work-os (phrase
 格式 `<简短英文描述>-<MMDD>`,例:`retry-logic-0525` `fix-acp-cost-0525`。
 用今天的日期(系统注入的 currentDate)。
 
-### 3. 判定涉及仓库
+### 3. (跳过)
 
-代码仓有三个:`nerve` `nerve-tui` `nerve-app`。判断需求要改哪些。
-
-`ai-work-os`(根仓库,含 AGENTS.md + ai/)**总是带上** —— worker 在 worktree 里要看到完整上下文。
+不用判定涉及哪些仓 —— worktree-task 默认全切(根 + 三个代码仓),省得猜。用得到更好,用不到也无害。
 
 ### 4. 预侦察(在主仓库)
 
@@ -48,10 +46,22 @@ case "$(uname -s)" in
   Darwin) CONFIG=~/work/ai-work-os/ai/ai-coding/dev-project.mac.json ;;
   Linux)  CONFIG=~/work/ai-work-os/ai/ai-coding/dev-project.json ;;
 esac
-worktree-task create --config "$CONFIG" --task <id> --repos ai-work-os,<r1,r2>
+worktree-task create --config "$CONFIG" --task <id>
 ```
 
-完成后会得到 `<worktree_root>/<id>/`,里面每个 repo 是 `task/<id>` 分支(从 main 切)。骨架 `TASK.md` 自动生成,占位符待填。
+完成后得到 `<worktree_root>/<id>/`,**结构跟主仓库一模一样**(根仓库 worktree 占顶层 + 子代码仓嵌套):
+
+```
+<worktree_root>/<id>/
+├── AGENTS.md             ← 根仓库 worktree
+├── ai/                   ← (worker 读上下文从这里)
+├── nerve/                ← 三个代码仓 worktree(分支 task/<id>)
+├── nerve-app/
+├── nerve-tui/
+└── TASK.md               ← 待填的任务卡
+```
+
+worker 在 `<worktree_root>/<id>/<主repo>/` 里干活,读 `../AGENTS.md` 拿上下文,跟主仓库相对位置完全一致。
 
 ### 6. 填 TASK.md
 
@@ -69,7 +79,7 @@ Edit `<worktree_root>/<id>/TASK.md`,替换四个占位符:
 发给用户:
 - worktree 路径(`<worktree_root>/<id>/<主repo>/`)
 - 任务 id 和分支名
-- 一句话总结:他切过去开 Claude Code,worker 自己读 `../TASK.md` 和 `../ai-work-os/AGENTS.md`(worktree 内)就能干
+- 一句话总结:他切过去开 Claude Code,worker 自己读 `../TASK.md` 和 `../AGENTS.md`(worktree 顶层)就能干
 
 不主动 spawn worker、不自动进入 worktree 写代码。**到此打住**,把控制权交回用户。
 

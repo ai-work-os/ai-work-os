@@ -13,9 +13,13 @@ usage() {
 worktree-task — 多仓库任务工作区管理
 
 用法:
-  worktree-task create --config <p> --task <id> --repos <r1,r2>
+  worktree-task create --config <p> --task <id> [--repos <r1,r2>]
   worktree-task list   --config <p>
   worktree-task remove --config <p> --task <id>
+
+注: --repos 不传时默认 config 里所有 repos(全切,省得判断)。
+    如果配置里有 "path": "." 的 root repo,它的 worktree 占 $task_dir 顶层,
+    其他子 repos 嵌套在 $task_dir/<repo>/ 下(跟主仓库结构一致)。
 EOF
 }
 
@@ -42,33 +46,76 @@ case "$cmd" in
     worktree_root="$(jq -r '.worktree_root' "$config")"
     task_dir="$worktree_root/$task"
     [[ -e "$task_dir" ]] && die "任务工作区已存在: $task_dir（先 remove,或换 task id）"
+    # 不传 --repos 时默认所有 config 里的 repos(全切,省得判定哪些用得到)
+    if [[ -z "$repos" ]]; then
+      repos="$(jq -r '.repos | keys | join(",")' "$config")"
+    fi
     log "create task=$task repos=$repos config=$config"
-    mkdir -p "$task_dir"
-    IFS=',' read -ra repo_list <<< "$repos"
-    for repo in "${repo_list[@]}"; do
-      base="$(jq -r --arg r "$repo" '.repos[$r].base' "$config")"
-      # path 字段可选:缺省 = $repos_root/$repo;"." = $repos_root 本身(根仓库);
-      # 绝对路径直接用;其余按相对 $repos_root 解析。
+    mkdir -p "$worktree_root"
+
+    # 工具函数:解析 repo path
+    resolve_repo_path() {
+      local repo="$1"
+      local path_override
       path_override="$(jq -r --arg r "$repo" '.repos[$r].path // ""' "$config")"
       if [[ -z "$path_override" ]]; then
-        repo_path="$repos_root/$repo"
+        echo "$repos_root/$repo"
       elif [[ "$path_override" == "." ]]; then
-        repo_path="$repos_root"
+        echo "$repos_root"
       elif [[ "$path_override" == /* ]]; then
-        repo_path="$path_override"
+        echo "$path_override"
       else
-        repo_path="$repos_root/$path_override"
+        echo "$repos_root/$path_override"
       fi
-      # 解析基线:优先本地分支,否则 origin/<base>;再传给 worktree add 显式起点。
-      # 直接传 "dev" 这种名字会触发 worktree add 的远程 DWIM,无视 -b、错切到 dev。
+    }
+
+    # 工具函数:解析基线(本地分支 → origin → die)
+    resolve_start_ref() {
+      local repo_path="$1" base="$2" repo="$3"
       if git -C "$repo_path" show-ref --verify --quiet "refs/heads/$base"; then
-        start="$base"
+        echo "$base"
       elif git -C "$repo_path" show-ref --verify --quiet "refs/remotes/origin/$base"; then
-        start="origin/$base"
+        echo "origin/$base"
       else
         die "基线分支不存在: $base（repo $repo)"
       fi
-      log "  worktree: $repo (base $start) -> 分支 task/$task"
+    }
+
+    # 分两轮处理:
+    # 1) path="." 的 root repo 的 worktree target 是 $task_dir 本身(占顶层),
+    #    且必须先处理(它创建 $task_dir 这个目录,其他 repo 才能嵌套进去)
+    # 2) 其他子 repo 的 worktree target 是 $task_dir/$repo(嵌套位置,被 root 的 .gitignore 屏蔽)
+    IFS=',' read -ra repo_list <<< "$repos"
+
+    root_repo=""
+    sub_repos=()
+    for repo in "${repo_list[@]}"; do
+      path_override="$(jq -r --arg r "$repo" '.repos[$r].path // ""' "$config")"
+      if [[ "$path_override" == "." ]]; then
+        [[ -n "$root_repo" ]] && die "只能有一个 root repo(path=\".\"): 已有 $root_repo,又来 $repo"
+        root_repo="$repo"
+      else
+        sub_repos+=("$repo")
+      fi
+    done
+
+    # 第一轮:root repo(如有)
+    if [[ -n "$root_repo" ]]; then
+      base="$(jq -r --arg r "$root_repo" '.repos[$r].base' "$config")"
+      repo_path="$(resolve_repo_path "$root_repo")"
+      start="$(resolve_start_ref "$repo_path" "$base" "$root_repo")"
+      log "  worktree(root): $root_repo (base $start) -> $task_dir 分支 task/$task"
+      git -C "$repo_path" worktree add --no-track "$task_dir" -b "task/$task" "$start"
+    else
+      mkdir -p "$task_dir"
+    fi
+
+    # 第二轮:子 repos 嵌套进 $task_dir/$repo
+    for repo in "${sub_repos[@]}"; do
+      base="$(jq -r --arg r "$repo" '.repos[$r].base' "$config")"
+      repo_path="$(resolve_repo_path "$repo")"
+      start="$(resolve_start_ref "$repo_path" "$base" "$repo")"
+      log "  worktree: $repo (base $start) -> $task_dir/$repo 分支 task/$task"
       git -C "$repo_path" worktree add --no-track "$task_dir/$repo" -b "task/$task" "$start"
     done
     cat > "$task_dir/TASK.md" <<EOF
@@ -108,23 +155,51 @@ EOF
     worktree_root="$(jq -r '.worktree_root' "$config")"
     task_dir="$worktree_root/$task"
     log "remove task=$task config=$config"
-    while IFS= read -r repo; do
-      wt="$task_dir/$repo"
-      [[ -d "$wt" ]] || continue
-      # 同 create 段的 path 解析逻辑
+
+    # 工具函数(remove 段重复了一份):
+    resolve_repo_path() {
+      local repo="$1"
+      local path_override
       path_override="$(jq -r --arg r "$repo" '.repos[$r].path // ""' "$config")"
       if [[ -z "$path_override" ]]; then
-        repo_path="$repos_root/$repo"
+        echo "$repos_root/$repo"
       elif [[ "$path_override" == "." ]]; then
-        repo_path="$repos_root"
+        echo "$repos_root"
       elif [[ "$path_override" == /* ]]; then
-        repo_path="$path_override"
+        echo "$path_override"
       else
-        repo_path="$repos_root/$path_override"
+        echo "$repos_root/$path_override"
       fi
+    }
+
+    # 顺序:先嵌套 sub repo,再 root repo($task_dir 本身)。否则 root remove 后 sub worktree 已没了。
+    root_repo=""
+    sub_repos=()
+    while IFS= read -r repo; do
+      path_override="$(jq -r --arg r "$repo" '.repos[$r].path // ""' "$config")"
+      if [[ "$path_override" == "." ]]; then
+        root_repo="$repo"
+      else
+        sub_repos+=("$repo")
+      fi
+    done < <(jq -r '.repos | keys[]' "$config")
+
+    # 先 remove sub repos
+    for repo in "${sub_repos[@]}"; do
+      wt="$task_dir/$repo"
+      [[ -d "$wt" ]] || continue
+      repo_path="$(resolve_repo_path "$repo")"
       log "  removed worktree: $repo"
       git -C "$repo_path" worktree remove --force "$wt"
-    done < <(jq -r '.repos | keys[]' "$config")
+    done
+
+    # 再 remove root repo(其 worktree target 是 $task_dir 本身)
+    if [[ -n "$root_repo" && -d "$task_dir" ]]; then
+      repo_path="$(resolve_repo_path "$root_repo")"
+      log "  removed worktree(root): $root_repo @ $task_dir"
+      git -C "$repo_path" worktree remove --force "$task_dir"
+    fi
+
     rm -rf "$task_dir"
     log "removed: $task_dir"
     ;;

@@ -34,7 +34,7 @@ renjinxi 在手机 nerve-app 上聊清一个开发需求 → 系统切隔离 git
 | ① Intake | renjinxi ↔ dispatcher | 在 nerve-app 聊需求,dispatcher 反问澄清到具体 |
 | ② 任务卡 | dispatcher | 蒸馏需求 + 预侦察代码 → 写 `TASK.md`(需求/验收标准/代码地图) |
 | ③ 建隔离区 | `worktree-task` | 多仓 worktree + `task/<id>` 分支(从基线切) |
-| ④ 装上下文 | worker | spawn 进 worktree,读 `../TASK.md` + `../ai-work-os/AGENTS.md`(根仓库 worktree 副本) |
+| ④ 装上下文 | worker | spawn 进 worktree,读 `../TASK.md` + `../AGENTS.md`(根仓库 worktree 顶层) |
 | ⑤ 开发 | worker | TDD 红-绿-重构;改 nerve 用测试端口 4801 |
 | ⑥ 验证 | worker | 全量 build + test + lint,按 CLAUDE.md 完成清单卡门 |
 | ⑦ 提交 | worker | commit / push 分支(nerve 双 remote 都推)/ MR / 回报频道 / 自退 |
