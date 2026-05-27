@@ -3,6 +3,8 @@
 > **如果当前目录或上级目录有 `TASK.md`,那是任务卡,先读它再继续。**
 >
 > **运维相关动作前必读 `ai/context/playbook.md`** —— 启停/构建/测试 nerve、改 systemd / 端口、Android 发版、home 部署。配置和真实服务高度耦合,凭直觉跑命令容易踩坑。
+>
+> **涉及路径、remote、部署、运维对象时先识别当前环境** —— 执行 `uname -s`、`hostname`、`pwd`;在 home 本机不要再 `ssh home`,Mac 上才把 home 当远端。
 
 `ai-work-os` 是 monorepo 工作区(根目录 `~/work/ai-work-os/`),它本身是一个 git 仓库,用 `.gitignore` 把内嵌的代码子仓库(`nerve/` `nerve-app/` `nerve-tui/` `nerve-android/`)忽略掉。
 
@@ -44,7 +46,7 @@
 | 文件 / 目录 | 内容 |
 |---|---|
 | `AGENTS.md` / `CLAUDE.md` | 本文件(`CLAUDE.md` 是软链)。super-project 级 AI 入口 |
-| `ai/ai-coding/` | AI 编码工具配置真身(skill / 工具 / 平台配置)。软链给 `~/.claude` `~/.codex`。**Mac 上发起新开发任务用 `start-task` skill。** 详见 `ai/ai-coding/README.md`。 |
+| `ai/ai-coding/` | AI 编码工具配置真身(skill / 工具 / 平台配置)。软链给 `~/.claude` `~/.codex`。**新开发任务用 `start-task` skill,按当前 host 自动选 Mac/home 配置。** 详见 `ai/ai-coding/README.md`。 |
 | `ai/context/architecture.md` | 架构地图:子仓库结构、nerve 核心概念、需求入口 |
 | `ai/context/playbook.md` | 操作手册:跑/构建/测试/发版/home 运维 / scene 维护 |
 | `ai/context/conventions.md` | 稳定约定 + 常见坑 |
@@ -61,8 +63,8 @@
 | 稳定约定 + 常见坑 | `ai/context/conventions.md` |
 | 远程开发流程(Mac + home 同构) | `ai/ai-coding/remote-dev-flow.md` |
 | 远程开发 playbook(dispatcher / worker 怎么做) | `ai/ai-coding/skills/remote-dev.md` |
-| start-task skill(Mac 任务环境一站式创建) | `ai/ai-coding/skills/start-task/SKILL.md` |
-| worktree-task 工具 + 平台配置 | `ai/ai-coding/worktree-task/` · `ai/ai-coding/dev-project.{mac,home}.json` |
+| start-task skill(任务环境一站式创建) | `ai/ai-coding/skills/start-task/SKILL.md` |
+| worktree-task 工具 + 平台配置 | `ai/ai-coding/worktree-task/` · `ai/ai-coding/dev-project.json` · `ai/ai-coding/dev-project.mac.json` |
 | dispatcher 角色 prompt(home 常驻 agent) | `ai/ai-coding/dispatcher-prompt.md` |
 | nerve-server 管理脚本(服务/构建/发版/部署) | `ai/ai-coding/skills/nerve-server.md` |
 

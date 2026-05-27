@@ -7,7 +7,7 @@
 ### 仓库结构与 git 流程
 
 - **多仓结构:** 根仓库 `ai-work-os` + 三个代码仓 `nerve` / `nerve-app` / `nerve-tui`(各自独立 git)。根 `.gitignore` 屏蔽代码仓。
-- **开发在任务 worktree 内(`task/<id>` 分支)**,不在主仓库改代码。worktree 由 `start-task` skill 自动创建,结构跟主仓库 100% 镜像。提交: `git -C <worktree>/<repo> commit`。
+- **开发在任务 worktree 内(`<type>/<id>` 分支)**,不在主仓库改代码。worktree 由 `start-task` skill 自动创建,结构跟主仓库 100% 镜像,并基于配置的远端最新 commit。提交: `git -C <worktree>/<repo> commit`。
 - **双 remote push:** 所有仓库(根 + 三代码仓)都配了 `origin`(GitHub) + `gitlab`(公司 GitLab),推送两个都要推。
 - commit 时若 hook 报错,需要 `GVM_ROOT="" git commit ...`。
 

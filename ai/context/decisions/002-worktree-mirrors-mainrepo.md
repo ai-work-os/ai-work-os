@@ -18,7 +18,7 @@
 ├── AGENTS.md / CLAUDE.md       ← AI 工具自动加载
 ├── ai/                         ← 项目知识
 ├── TASK.md                     ← 任务卡(AGENTS.md 顶部引导自动读)
-├── nerve/                      ← 三个代码仓 worktree(分支 task/<id>)
+├── nerve/                      ← 三个代码仓 worktree(分支 <type>/<id>)
 ├── nerve-app/                  (根 .gitignore 屏蔽,嵌套位置合法)
 └── nerve-tui/
 ```
@@ -49,10 +49,10 @@
 
 - 每个 worktree 多 3 个嵌套 git worktree(磁盘小代价)
 - `worktree-task` 实现要分两轮:root repo 占顶层(创建 `$task_dir`)→ sub repos 嵌套(`$task_dir/<repo>/`)。remove 反着来
-- `dev-project.json` 需要 `"ai-work-os": { "base": "main", "path": "." }` 这个特殊条目
+- `dev-project.json` 需要 `"ai-work-os": { "base": "main", "remote": "gitlab", "path": "." }` 这个特殊条目
 
 ## 关联
 
 - 实施:commit `9659dec`(worktree-task 支持 `path: "."` + root 占顶层 + 默认全切)
 - 工具:`ai/ai-coding/worktree-task/worktree-task`
-- 配置:`ai/ai-coding/dev-project.{mac,home}.json`
+- 配置:`ai/ai-coding/dev-project.json` / `ai/ai-coding/dev-project.mac.json`
