@@ -2,6 +2,26 @@
 
 > 各仓库怎么跑/构建/测试/发版,home 怎么运维。不装一次性排查流水。
 
+## 当前 host 判定
+
+涉及路径、remote、服务、部署前,先执行:
+
+```bash
+uname -s
+hostname
+pwd
+```
+
+- Darwin = Mac 本机:Mac 路径是 `/Users/renjinxi/...`;只有这时才把 home 当远端并使用 `ssh home`。
+- Linux + `/home/renjinxi/...` = home 本机:直接用本机路径和 `systemctl --user`;不要 `ssh home`。
+- 手机触发的 dispatcher/worker 常驻 home 是常态,不要默认"当前本机是 Mac"。
+
+## A+B 档流程边界
+
+- A 档(日常开发):GitLab Issue 是入口,worker 交付 GitLab MR,MR 关联 Issue,main 保护分支只经 MR 合并。
+- B 档(合并后):GitHub 只是镜像同步;部署/重启按当前 host 选择本机或远端命令;Android release 独立于 MR 合并。
+- Android MR 合并不等于已发版。发版必须单独 bump 版本、构建 APK、发布到 home nginx、更新版本 JSON。
+
 ## 各仓库:跑 / 构建 / 测试
 
 ### nerve(服务端 — Node.js/TypeScript)
@@ -90,7 +110,7 @@ nerve-server install android     # 构建 + adb install
 
 ## nerve 重启 / 发版 / 部署
 
-### mac 本地 nerve 管理
+### 本机开发 nerve 管理
 
 ```bash
 nerve-server start    # 启动(端口 4800,pid 写 ~/.nerve/server.pid)
@@ -105,10 +125,10 @@ nerve-server log      # tail -f ~/.nerve/nerve.log
 ### home 上的 nerve 部署
 
 ```bash
-# 推代码到 home 并重启(推荐)
+# Mac 上推代码到 home 并重启(推荐)
 nerve-server deploy nerve
 
-# 手动等价流程
+# Mac 上手动等价流程
 ssh home '
   cd ~/work/ai-work-os/nerve
   git pull origin main
@@ -118,11 +138,15 @@ ssh home '
 '
 ```
 
+如果当前已经在 home 本机,不要 `ssh home`;直接执行引号内命令。
+
 **关键:** home 跑的是 `dist/`,改完 TS 必须 `npm run build` 才生效。
 
 ---
 
 ## Android 发版
+
+Android release 是 B 档独立流程,不由 MR 合并自动完成。只有完成 bump/build/publish 后,手机才会看到更新。
 
 完整发版流程(一条命令):
 

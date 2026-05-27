@@ -42,8 +42,12 @@ make_sandbox() {
 }
 make_repo() { # sandbox 名字 [基线分支=dev]
   local r="$1/repos/$2" base="${3:-dev}"
+  local up="$1/upstream-$2"
+  git init -q --bare "$up"
   git init -q -b "$base" "$r"
   git -C "$r" -c user.name=t -c user.email=t@t commit -q --allow-empty -m init
+  git -C "$r" remote add origin "$up"
+  git -C "$r" push -q -u origin "$base"
 }
 make_cloned_repo() { # sandbox 名字  -> repos/<名字> 是 clone:本地只有 main,基线 dev 仅在 origin
   local up="$1/upstream-$2"
@@ -52,12 +56,31 @@ make_cloned_repo() { # sandbox 名字  -> repos/<名字> 是 clone:本地只有 
   git -C "$up" branch dev
   git clone -q "$up" "$1/repos/$2"
 }
-write_config() { # sandbox [repo:base ...]  默认 myrepo:dev  -> 打印配置文件路径
+make_stale_cloned_repo() { # sandbox 名字 [remote=origin] -> local dev 落后 remote/dev
+  local sb="$1" name="$2" remote="${3:-origin}"
+  local up="$sb/upstream-$name" seed="$sb/seed-$name" repo="$sb/repos/$name"
+  git init -q --bare "$up"
+  git clone -q "$up" "$seed"
+  git -C "$seed" switch -q -c dev
+  git -C "$seed" -c user.name=t -c user.email=t@t commit -q --allow-empty -m old
+  git -C "$seed" push -q origin dev
+  git clone -q "$up" "$repo"
+  git -C "$repo" switch -q dev
+  git -C "$seed" -c user.name=t -c user.email=t@t commit -q --allow-empty -m new
+  git -C "$seed" push -q origin dev
+  if [[ "$remote" != "origin" ]]; then
+    git -C "$repo" remote rename origin "$remote"
+  fi
+}
+write_config() { # sandbox [repo:base[:remote] ...]  默认 myrepo:dev  -> 打印配置文件路径
   local sb="$1"; shift
   [[ $# -gt 0 ]] || set -- myrepo:dev
-  local cfg="$sb/dev-project.json" entries="" spec
+  local cfg="$sb/dev-project.json" entries="" spec name base remote remote_json
   for spec in "$@"; do
-    entries+="\"${spec%%:*}\":{\"base\":\"${spec##*:}\"},"
+    IFS=':' read -r name base remote <<< "$spec"
+    remote_json=""
+    [[ -n "${remote:-}" ]] && remote_json=",\"remote\":\"$remote\""
+    entries+="\"$name\":{\"base\":\"$base\"$remote_json},"
   done
   cat > "$cfg" <<EOF
 {
@@ -77,7 +100,7 @@ make_repo "$SB" myrepo
 CFG="$(write_config "$SB")"
 "$WT" create --config "$CFG" --task t1 --repos myrepo > /dev/null 2>&1
 assert_dir "$SB/wt/t1/myrepo" "worktree 目录已建"
-assert_eq "task/t1" "$(git -C "$SB/wt/t1/myrepo" branch --show-current 2>/dev/null)" "分支是 task/t1"
+assert_eq "feat/t1" "$(git -C "$SB/wt/t1/myrepo" branch --show-current 2>/dev/null)" "分支是 feat/t1"
 rm -rf "$SB"
 
 # ── 用例 2:create 在任务根写 TASK.md 骨架 ──────────────────────
@@ -88,6 +111,7 @@ CFG="$(write_config "$SB")"
 "$WT" create --config "$CFG" --task t2 --repos myrepo > /dev/null 2>&1
 assert_file "$SB/wt/t2/TASK.md" "TASK.md 已建"
 assert_grep "$SB/wt/t2/TASK.md" "t2" "TASK.md 含任务 id"
+assert_grep "$SB/wt/t2/TASK.md" "Issue: <待创建/待关联>" "TASK.md 含 Issue 占位"
 rm -rf "$SB"
 
 # ── 用例 3:list 列出已建任务工作区 ─────────────────────────────
@@ -120,8 +144,8 @@ CFG="$(write_config "$SB" a:dev b:dev)"
 "$WT" create --config "$CFG" --task t5 --repos a,b > /dev/null 2>&1
 assert_dir "$SB/wt/t5/a" "repo a 的 worktree 已建"
 assert_dir "$SB/wt/t5/b" "repo b 的 worktree 已建"
-assert_eq "task/t5" "$(git -C "$SB/wt/t5/a" branch --show-current 2>/dev/null)" "a 分支 task/t5"
-assert_eq "task/t5" "$(git -C "$SB/wt/t5/b" branch --show-current 2>/dev/null)" "b 分支 task/t5"
+assert_eq "feat/t5" "$(git -C "$SB/wt/t5/a" branch --show-current 2>/dev/null)" "a 分支 feat/t5"
+assert_eq "feat/t5" "$(git -C "$SB/wt/t5/b" branch --show-current 2>/dev/null)" "b 分支 feat/t5"
 rm -rf "$SB"
 
 # ── 用例 6:create 任务已存在时报错退出 ─────────────────────────
@@ -153,8 +177,32 @@ SB="$(make_sandbox)"
 make_cloned_repo "$SB" myrepo
 CFG="$(write_config "$SB")"
 "$WT" create --config "$CFG" --task t9 --repos myrepo > /dev/null 2>&1
-assert_eq "task/t9" "$(git -C "$SB/wt/t9/myrepo" branch --show-current 2>/dev/null)" "分支是 task/t9(非 dev)"
+assert_eq "feat/t9" "$(git -C "$SB/wt/t9/myrepo" branch --show-current 2>/dev/null)" "分支是 feat/t9(非 dev)"
 assert_absent "$SB/wt/t9/dev" "无多余 dev 目录"
+rm -rf "$SB"
+
+# ── 用例 10:本地 base 落后远端时使用远端最新 commit ─────────────
+echo "[10] create:本地 base 落后远端时使用远端最新 commit"
+SB="$(make_sandbox)"
+make_stale_cloned_repo "$SB" myrepo
+CFG="$(write_config "$SB")"
+remote_hash="$(git -C "$SB/repos/myrepo" ls-remote origin refs/heads/dev | awk '{print $1}')"
+"$WT" create --config "$CFG" --task t10 --repos myrepo > /dev/null 2>&1
+wt_hash="$(git -C "$SB/wt/t10/myrepo" rev-parse HEAD)"
+assert_eq "$remote_hash" "$wt_hash" "worktree HEAD 使用 origin/dev 最新 commit"
+assert_grep "$SB/wt/t10/TASK.md" "$remote_hash" "TASK.md 记录 baseline commit"
+rm -rf "$SB"
+
+# ── 用例 11:配置 remote 非 origin 时使用对应远端 ────────────────
+echo "[11] create:配置 remote 非 origin 时使用对应远端"
+SB="$(make_sandbox)"
+make_stale_cloned_repo "$SB" myrepo gitlab
+CFG="$(write_config "$SB" myrepo:dev:gitlab)"
+remote_hash="$(git -C "$SB/repos/myrepo" ls-remote gitlab refs/heads/dev | awk '{print $1}')"
+"$WT" create --config "$CFG" --task t11 --repos myrepo > /dev/null 2>&1
+wt_hash="$(git -C "$SB/wt/t11/myrepo" rev-parse HEAD)"
+assert_eq "$remote_hash" "$wt_hash" "worktree HEAD 使用 gitlab/dev 最新 commit"
+assert_grep "$SB/wt/t11/TASK.md" "gitlab/dev" "TASK.md 记录非 origin baseline ref"
 rm -rf "$SB"
 
 echo

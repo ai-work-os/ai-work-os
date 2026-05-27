@@ -76,16 +76,33 @@ case "$cmd" in
       fi
     }
 
-    # 工具函数:解析基线(本地分支 → origin → die)
-    resolve_start_ref() {
-      local repo_path="$1" base="$2" repo="$3"
-      if git -C "$repo_path" show-ref --verify --quiet "refs/heads/$base"; then
-        echo "$base"
-      elif git -C "$repo_path" show-ref --verify --quiet "refs/remotes/origin/$base"; then
-        echo "origin/$base"
-      else
-        die "基线分支不存在: $base（repo $repo)"
+    # 工具函数:解析远端。配置优先;缺省时 root repo 尝试从本地 base 的 upstream 推断,
+    # 其他 repo 默认 origin。只解析 remote 名,不允许静默使用本地旧分支。
+    resolve_remote() {
+      local repo_path="$1" base="$2" repo="$3" path_override="$4"
+      local remote
+      remote="$(jq -r --arg r "$repo" '.repos[$r].remote // ""' "$config")"
+      if [[ -z "$remote" && "$path_override" == "." ]]; then
+        remote="$(git -C "$repo_path" config --get "branch.$base.remote" || true)"
       fi
+      : "${remote:=origin}"
+      git -C "$repo_path" remote get-url "$remote" >/dev/null 2>&1 \
+        || die "remote 不存在: repo=$repo remote=$remote base=$base"
+      echo "$remote"
+    }
+
+    # 工具函数:刷新并解析远端基线,输出 remote|base|hash。
+    resolve_baseline() {
+      local repo_path="$1" base="$2" repo="$3"
+      local path_override remote hash
+      path_override="$(jq -r --arg r "$repo" '.repos[$r].path // ""' "$config")"
+      remote="$(resolve_remote "$repo_path" "$base" "$repo" "$path_override")"
+      log "  fetch baseline: $repo $remote/$base"
+      git -C "$repo_path" fetch --prune "$remote" "+refs/heads/$base:refs/remotes/$remote/$base" \
+        || die "fetch 基线失败: repo=$repo remote=$remote base=$base"
+      hash="$(git -C "$repo_path" rev-parse --verify "refs/remotes/$remote/$base^{commit}" 2>/dev/null)" \
+        || die "远端基线不存在: repo=$repo remote=$remote base=$base"
+      echo "$remote|$base|$hash"
     }
 
     # 分两轮处理:
@@ -93,6 +110,7 @@ case "$cmd" in
     #    且必须先处理(它创建 $task_dir 这个目录,其他 repo 才能嵌套进去)
     # 2) 其他子 repo 的 worktree target 是 $task_dir/$repo(嵌套位置,被 root 的 .gitignore 屏蔽)
     IFS=',' read -ra repo_list <<< "$repos"
+    baseline_records=()
 
     root_repo=""
     sub_repos=()
@@ -110,9 +128,11 @@ case "$cmd" in
     if [[ -n "$root_repo" ]]; then
       base="$(jq -r --arg r "$root_repo" '.repos[$r].base' "$config")"
       repo_path="$(resolve_repo_path "$root_repo")"
-      start="$(resolve_start_ref "$repo_path" "$base" "$root_repo")"
-      log "  worktree(root): $root_repo (base $start) -> $task_dir 分支 $branch_name"
-      git -C "$repo_path" worktree add --no-track "$task_dir" -b "$branch_name" "$start"
+      baseline="$(resolve_baseline "$repo_path" "$base" "$root_repo")"
+      IFS='|' read -r remote base hash <<< "$baseline"
+      baseline_records+=("$root_repo|$remote|$base|$hash")
+      log "  worktree(root): $root_repo (base $remote/$base @ $hash) -> $task_dir 分支 $branch_name"
+      git -C "$repo_path" worktree add --no-track "$task_dir" -b "$branch_name" "$hash"
     else
       mkdir -p "$task_dir"
     fi
@@ -121,14 +141,31 @@ case "$cmd" in
     for repo in "${sub_repos[@]}"; do
       base="$(jq -r --arg r "$repo" '.repos[$r].base' "$config")"
       repo_path="$(resolve_repo_path "$repo")"
-      start="$(resolve_start_ref "$repo_path" "$base" "$repo")"
-      log "  worktree: $repo (base $start) -> $task_dir/$repo 分支 $branch_name"
-      git -C "$repo_path" worktree add --no-track "$task_dir/$repo" -b "$branch_name" "$start"
+      baseline="$(resolve_baseline "$repo_path" "$base" "$repo")"
+      IFS='|' read -r remote base hash <<< "$baseline"
+      baseline_records+=("$repo|$remote|$base|$hash")
+      log "  worktree: $repo (base $remote/$base @ $hash) -> $task_dir/$repo 分支 $branch_name"
+      git -C "$repo_path" worktree add --no-track "$task_dir/$repo" -b "$branch_name" "$hash"
+    done
+    baseline_md=""
+    for record in "${baseline_records[@]}"; do
+      IFS='|' read -r repo remote base hash <<< "$record"
+      baseline_md+="- $repo: $remote/$base @ $hash"$'\n'
     done
     cat > "$task_dir/TASK.md" <<EOF
 # 任务:$task
 
 > 由 dispatcher 蒸馏需求后填写。worker 进 worktree 后先读本文件。freestanding,不进 git。
+
+## 基线
+
+${baseline_md:-<未创建 repo worktree>}
+
+## 协作链路
+
+- Issue: <待创建/待关联>
+- MR: <待创建>
+- 看板: <跟随 GitLab Issue/MR>
 
 ## 需求
 

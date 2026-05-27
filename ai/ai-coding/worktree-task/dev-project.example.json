@@ -3,9 +3,9 @@
   "repos_root": "/home/renjinxi/work/ai-work-os",
   "worktree_root": "/home/renjinxi/work/worktree/ai-work-os",
   "repos": {
-    "nerve": { "base": "main" },
-    "nerve-app": { "base": "main" },
-    "nerve-tui": { "base": "main" },
-    "ai": { "base": "main" }
+    "ai-work-os": { "base": "main", "remote": "gitlab", "path": "." },
+    "nerve": { "base": "main", "remote": "origin" },
+    "nerve-app": { "base": "main", "remote": "origin" },
+    "nerve-tui": { "base": "main", "remote": "origin" }
   }
 }

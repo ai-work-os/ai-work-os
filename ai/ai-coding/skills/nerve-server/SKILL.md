@@ -23,13 +23,13 @@ nerve-server <command> [args]
 本地安装:
   install <tui|android>
 
-远端构建+安装（ssh home）:
+home 构建+安装（Mac 上通过 ssh home;home 本机直接执行）:
   install-remote <tui>
 
 Android 发版（home nginx）:
   publish-android [notes]
 
-远端部署（ssh home + systemctl restart）:
+home 部署（Mac 上通过 ssh home + systemctl restart;home 本机直接执行等价步骤）:
   deploy [nerve|tui|all]
 ```
 
@@ -37,17 +37,30 @@ Android 发版（home nginx）:
 
 ## 命令详解
 
-### 服务管理（管 mac 本地的 nerve 进程）
+### 当前 host 判定
+
+启动、部署、发版前先执行:
+
+```bash
+uname -s
+hostname
+pwd
+```
+
+- Darwin = Mac 本机:本地 `nerve-server start/restart` 管 Mac 进程;操作 home 才用 `ssh home` 或 `nerve-server deploy`。
+- Linux + `/home/renjinxi/...` = home 本机:不要再 `ssh home`;直接按 deploy 等价步骤在本机执行 `git pull` / build / `systemctl --user restart nerve`。
+
+### 服务管理（管当前本机的 nerve 进程）
 
 | 命令 | 干什么 |
 |---|---|
-| `nerve-server start` | 启 nerve（mac 本地，端口 4800），写 pid 到 `~/.nerve/server.pid` |
+| `nerve-server start` | 启当前本机 nerve（端口 4800），写 pid 到 `~/.nerve/server.pid` |
 | `nerve-server stop` | 杀 nerve（按 pid + 端口） |
 | `nerve-server restart` | stop + start，老进程清干净再起新的 |
 | `nerve-server status` | 看是不是在跑、pid、端口 |
 | `nerve-server log` | `tail -f ~/.nerve/nerve.log` |
 
-**注意**：这管的是 **mac 本地 nerve**。home 上的 nerve 是 user-level systemd（`systemctl --user restart nerve`），跟这个无关。home 部署用 `nerve-server deploy nerve`。
+**注意**：home 上的生产 nerve 是 user-level systemd（`systemctl --user restart nerve`）。如果当前就在 home 本机,直接用 user-level systemd;如果当前在 Mac,home 部署用 `nerve-server deploy nerve`。
 
 ### 构建
 
@@ -67,11 +80,11 @@ Android 发版（home nginx）:
 | `nerve-server install tui` | build + `cargo install --path .` 到 `~/.cargo/bin/nerve-tui` |
 | `nerve-server install android` | build + `adb install -r app-debug.apk` 到当前 USB 手机 |
 
-### 远端构建+安装
+### home 构建+安装
 
 | 命令 | 干什么 |
 |---|---|
-| `nerve-server install-remote tui` | ssh home → git pull + cargo install — home 上也能用 nerve-tui |
+| `nerve-server install-remote tui` | Mac 上 ssh home → git pull + cargo install;home 本机按等价命令直接执行 |
 
 ### Android 发版（**最常用**）
 
@@ -82,7 +95,7 @@ nerve-server publish-android [notes]
 4 步：
 1. `cd <ANDROID_DIR> && ./gradlew :app:assembleDebug`
 2. rsync `app-debug.apk` 到 `home:/tmp/nerve-app.apk`（自带重试 8 次，60s server alive）
-3. ssh home：`sudo cp /tmp/nerve-app.apk /var/www/html/nerve-app.apk`
+3. Mac 上 ssh home 执行 `sudo cp /tmp/nerve-app.apk /var/www/html/nerve-app.apk`;home 本机直接执行 copy
 4. 写 `nerve-app-version.json` 到 nginx（手机端 auto-update 看这个）
 
 `versionCode / versionName` 自动从 `app/build.gradle.kts` 读。`notes` 是 UI 横幅文案，可空则默认 `v<versionName>`。
@@ -121,11 +134,11 @@ nerve-server publish-android "说明"
 nerve-server deploy [nerve|tui|all]
 ```
 
-- `deploy nerve`：ssh home → `cd nerve && git pull origin main && npm install && npm run build && systemctl --user restart nerve`
-- `deploy tui`：ssh home → 同上但 cargo
+- `deploy nerve`：Mac 上 ssh home → `cd nerve && git pull origin main && npm install && npm run build && systemctl --user restart nerve`
+- `deploy tui`：Mac 上 ssh home → 同上但 cargo
 - `deploy` 或 `... all`：两个都做
 
-home 上的 nerve 是 **user-level systemd**（详见 `ai/runbooks/home-deploy.md`）—— deploy 命令封装了正确的 restart 方式，**不要自己 sudo systemctl**。
+home 上的 nerve 是 **user-level systemd**（详见 `ai/context/playbook.md`）—— 当前在 home 本机时不要 `ssh home`,直接执行等价步骤,且 **不要 sudo systemctl**。
 
 ---
 
