@@ -34,6 +34,7 @@
 - **包名: `com.nerve.android`**。`applicationId` 虽是 `com.nerve.app` 但 `adb` 命令用包名 `com.nerve.android`。
 - **Android 端不做本地持久化:** server buffer 是唯一真相源,DM 消息只存内存,内存中消息列表永远不清空(靠 replay 去重追加)。给 AI 写代码时必须显式说明此约束。
 - **Android 功能完工默认 bump versionCode + publish-android**,不要停在 push。
+- **Android release commit 合并 main 后由 GitLab CI 发布**: `nerve-app` 的 `android_release` 只允许 main push pipeline 手动触发;CI 不 bump 版本、不 commit、不 push。
 
 ### 演进原则
 
