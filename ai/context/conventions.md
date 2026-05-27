@@ -35,6 +35,7 @@
 - **Android 端不做本地持久化:** server buffer 是唯一真相源,DM 消息只存内存,内存中消息列表永远不清空(靠 replay 去重追加)。给 AI 写代码时必须显式说明此约束。
 - **Android 功能完工默认 bump versionCode + publish-android**,不要停在 push。
 - **Android release commit 合并 main 后由 GitLab CI 发布**: `nerve-app` 的 `android_release` 只允许 main push pipeline 手动触发;CI 不 bump 版本、不 commit、不 push。
+- **Android 发布包必须从 main 构建:** 功能分支/任务 workspace 修完后先合入 `main` 并推双远端,再在 `main` 上 bump `versionCode`,从 `main` 重新 `assembleDebug` 后发布。不要从未合入 main 的任务分支直接上传 APK,否则手机拿到的包可能缺 main 上的最新内容。
 
 ### 演进原则
 
@@ -70,6 +71,18 @@
 ### Android 客户端不做本地持久化
 
 nerve 的 AI 对话是任务型,server buffer 是 source of truth。AI 默认按常规 Android 架构写代码时会清内存等 replay 恢复,但 replay 不可靠。**给 AI 的指令里必须显式说"不做持久化、消息只存内存、永不清空"**。DM bug 五轮修不好的根因就在此。
+
+### Android 更新检测 UI
+
+更新横幅不能只挂在主 Tab 内容分支里。Settings 页的 `Check Now` 只触发 `UpdateViewModel.refresh()`,如果 `UpdateBanner` 只在 `AppScreen.Main` 内渲染,用户在 Settings 点检查即使检测到新版也看不到结果。更新横幅应作为 AppRoute 外层 overlay,覆盖 Main / Settings / Chat 等所有页面。
+
+### Android 自动更新网络
+
+手机端自动更新请求 `http://100.75.43.90/nerve-app-version.json`。如果用户说"检测更新没反应",先查 `~/.nerve/client-logs/nerve-app-YYYY-MM-DD.log` 的 `UpdateChecker`:
+
+- `fetch_fail reason=timeout` 或 `failed to connect to /100.75.43.90 (port 80)` 表示手机到 home nginx/Tailscale 80 端口不通,不是 APK 没发布。
+- 没有 `UpdateChecker refresh_begin/update_available/up_to_date` 日志时,说明按钮可能没触发、日志没上传、或用户停留页面看不到横幅;不要直接断言已发布成功。
+- 日志里的 `v=<number>` 是手机当前安装包 `versionCode`;若远端 JSON 的 `versionCode` 不大于它,客户端会判定 `UpToDate`。
 
 ### WS 心跳(半开连接)
 

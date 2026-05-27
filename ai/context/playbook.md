@@ -195,14 +195,28 @@ nerve-server publish-android "本次更新说明"
 **发版前必须 bump 版本:**
 
 ```bash
-# 改 app/build.gradle.kts
+# 在 nerve-app main 上操作,不要从任务分支直接发 APK
+git switch main
+git pull origin main
+# 合入已验证修复并推双远端后,改 app/build.gradle.kts
 versionCode = N+1
 versionName = "0.x.y"
 git commit -am "release(android): bump versionCode N→N+1 — 说明"
 nerve-server publish-android "说明"
 ```
 
-**默认规则:** Android 功能/修复完工后,默认 bump + publish,不要停在 push。手机启动 app 自动看到更新横幅。
+**默认规则:** Android 功能/修复完工后,默认合入 `main` → bump → 从 `main` 构建 → publish,不要停在 push。手机启动 app 自动看到更新横幅。
+
+**发布校验:**
+
+```bash
+./gradlew :app:testDebugUnitTest :app:assembleDebug :app:compileDebugAndroidTestKotlin
+aapt dump badging app/build/outputs/apk/debug/app-debug.apk | head -1
+curl -i http://100.75.43.90/nerve-app-version.json
+curl -I http://100.75.43.90/nerve-app.apk
+```
+
+确认 `aapt` 输出的 `versionCode` 和 `nerve-app-version.json` 一致,且二者都来自 `main` 最新提交。
 
 APK URL: `http://100.75.43.90/nerve-app.apk`
 
@@ -235,6 +249,25 @@ nerve-server publish-android "本次更新说明"
 ssh home 'apksigner verify --print-certs /var/www/html/nerve-app.apk'
 ssh home 'aapt dump badging /var/www/html/nerve-app.apk | head -1'
 ```
+
+### Android 更新检测排查
+
+如果手机点"检测更新"没有反应:
+
+1. 先确认服务端发布文件:
+   ```bash
+   curl -i http://100.75.43.90/nerve-app-version.json
+   curl -I http://100.75.43.90/nerve-app.apk
+   ```
+2. 再看手机远程日志:
+   ```bash
+   rg -n "UpdateViewModel|UpdateChecker|ApkDownloader|ApkInstaller|fetch_fail|update_available|up_to_date" \
+     ~/.nerve/client-logs/nerve-app-$(date +%F).log
+   ```
+3. 常见结论:
+   - `fetch_fail reason=timeout` 或 `failed to connect to /100.75.43.90 (port 80)` 是手机到 home nginx/Tailscale 80 端口不通。
+   - 只有聊天/连接日志,没有 `UpdateChecker`,说明本次检查没有进入更新链路或日志没上传。
+   - Settings 页点 `Check Now` 后若检测成功但没有横幅,检查 `UpdateBanner` 是否挂在全局 overlay,不要只挂在 Main tab 内。
 
 ---
 
