@@ -146,6 +146,36 @@ nerve-server publish-android "说明"
 
 APK URL: `http://100.75.43.90/nerve-app.apk`
 
+### Android 签名
+
+不要依赖每台机器自己的 `~/.android/debug.keystore` 发版。debug keystore 是机器本地生成的,Mac/Home 签名不同会导致手机覆盖安装失败。
+
+固定发版 key 放在私有目录,不要进 git:
+
+```bash
+~/.nerve/secrets/nerve-app-release.jks
+chmod 600 ~/.nerve/secrets/nerve-app-release.jks
+```
+
+`nerve-server publish-android` 支持通过环境变量指定签名:
+
+```bash
+export NERVE_ANDROID_KEYSTORE="$HOME/.nerve/secrets/nerve-app-release.jks"
+export NERVE_ANDROID_KEYSTORE_PASSWORD="..."
+export NERVE_ANDROID_KEY_ALIAS="nerve-app"
+export NERVE_ANDROID_KEY_PASSWORD="..."
+nerve-server publish-android "本次更新说明"
+```
+
+**切换签名证书时 Android 不能覆盖安装旧签名应用。** 如果从 debug key 切到 release key,手机端需要卸载一次旧包再安装新包;之后同一 release key 才能持续覆盖更新。
+
+发版后必须校验 nginx 上的 APK 本体,不能只看 `nerve-app-version.json`:
+
+```bash
+ssh home 'apksigner verify --print-certs /var/www/html/nerve-app.apk'
+ssh home 'aapt dump badging /var/www/html/nerve-app.apk | head -1'
+```
+
 ---
 
 ## home 运维

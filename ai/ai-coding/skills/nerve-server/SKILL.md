@@ -87,6 +87,23 @@ nerve-server publish-android [notes]
 
 `versionCode / versionName` 自动从 `app/build.gradle.kts` 读。`notes` 是 UI 横幅文案，可空则默认 `v<versionName>`。
 
+签名 key 不要进 git。固定发版 key 推荐放:
+
+```bash
+~/.nerve/secrets/nerve-app-release.jks
+```
+
+并通过环境变量传给 `publish-android`:
+
+```bash
+export NERVE_ANDROID_KEYSTORE="$HOME/.nerve/secrets/nerve-app-release.jks"
+export NERVE_ANDROID_KEYSTORE_PASSWORD="..."
+export NERVE_ANDROID_KEY_ALIAS="nerve-app"
+export NERVE_ANDROID_KEY_PASSWORD="..."
+```
+
+如果没有设置这些变量,`assembleDebug` 会使用当前机器的 debug keystore。不同机器 debug keystore 不同,会导致手机端覆盖安装失败。切换到正式 release key 时,现有 debug 签名包需要在手机上卸载一次。
+
 **用之前必须先 bump versionCode**（feedback `feedback_android_publish_default`：完工默认 bump + publish）：
 ```bash
 # 改 app/build.gradle.kts 里
