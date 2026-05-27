@@ -124,6 +124,42 @@ ssh home '
 
 ## Android 发版
 
+### GitLab CI 发布（main release commit 后）
+
+`nerve-app` 现在有独立 GitLab CI。MR、分支和 main pipeline 都跑:
+
+```bash
+./gradlew :app:testDebugUnitTest
+```
+
+发布 job 只在 `main` push pipeline 出现,并且是 manual。release commit 合并到 `main` 后,在 GitLab 手动执行 `android_release`;CI 会在 home shell runner 上构建并发布:
+
+```bash
+bash scripts/ci/publish-android.sh
+```
+
+CI 发布语义:
+
+- 不 bump `versionCode`,不 commit,不 push;版本必须在 release commit 里提前改好。
+- 从 `app/build.gradle.kts` 读取 `versionCode` / `versionName`。
+- 构建 `./gradlew :app:assembleDebug`,发布到 `/var/www/html/nerve-app.apk` 和 `/var/www/html/nerve-app-version.json`。
+- JSON 的 APK URL 是 `http://100.75.43.90/nerve-app.apk`;说明来自 CI 变量 `RELEASE_NOTES`,为空时默认 `v<versionName>`。
+- 发布前后都用 Android SDK build-tools 的 `aapt dump badging` 校验 APK 中的 `versionCode/versionName` 与 JSON 一致。脚本会从 `$AAPT`、`$ANDROID_HOME/build-tools/*/aapt`、`$ANDROID_SDK_ROOT` 和常见 SDK 路径发现 `aapt`。
+
+runner 要求:
+
+- runner tag: `home`。
+- executor: shell,运行在 home,不要 `ssh home`。
+- runner 用户需要能写 `/var/www/html`。推荐给最小 sudo 权限,只允许 `install` 写 `/var/www/html/nerve-app.apk` 和 `/var/www/html/nerve-app-version.json`;不要把 sudo 密码、runner token 或 `/etc/gitlab-runner/config.toml` 写进仓库。
+
+排查点:
+
+- `aapt not found`:安装 Android SDK build-tools,或在 CI 变量里设置 `AAPT=/path/to/aapt`。
+- 写 `/var/www/html` 失败:检查 runner 用户的目录写权限或最小 sudoers 配置。
+- 手机看不到更新:确认 release job 是 main pipeline 手动执行,再对比 `curl http://100.75.43.90/nerve-app-version.json` 和 `aapt dump badging /var/www/html/nerve-app.apk | head -1`。
+
+### 手动发布（备用）
+
 完整发版流程(一条命令):
 
 ```bash
