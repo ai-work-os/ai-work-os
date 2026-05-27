@@ -1,0 +1,174 @@
+#!/usr/bin/env bash
+# finish-task — task workspace closeout helper.
+set -euo pipefail
+
+die() { echo "finish-task: $*" >&2; exit 1; }
+
+usage() {
+  cat >&2 <<'EOF'
+finish-task — inspect or clean an ai-work-os task workspace
+
+Usage:
+  finish-task status  --config <p> --task <id>
+  finish-task cleanup --config <p> --task <id>
+
+Notes:
+  - status is read-only and prints per-repo closeout state.
+  - cleanup refuses dirty repos and repos not merged into configured remote/base.
+  - config accepts both workspace_root and legacy worktree_root.
+EOF
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+cmd="${1:-}"
+shift || true
+
+config="" task=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --config) config="$2"; shift 2 ;;
+    --task) task="$2"; shift 2 ;;
+    -h|--help) usage; exit 0 ;;
+    *) die "unknown argument: $1" ;;
+  esac
+done
+
+[[ "$cmd" == "status" || "$cmd" == "cleanup" ]] || { usage; exit 1; }
+[[ -n "$config" && -f "$config" ]] || die "config file not found: ${config:-<missing>}"
+[[ -n "$task" ]] || die "missing --task"
+command -v jq >/dev/null 2>&1 || die "jq not found"
+
+repos_root="$(jq -r '.repos_root // ""' "$config")"
+task_root="$(jq -r '.workspace_root // .worktree_root // ""' "$config")"
+[[ -n "$repos_root" && "$repos_root" != "null" ]] || die "config missing repos_root"
+[[ -n "$task_root" && "$task_root" != "null" ]] || die "config missing workspace_root/worktree_root"
+task_dir="$task_root/$task"
+
+resolve_source_repo() {
+  local repo="$1" path_override
+  path_override="$(jq -r --arg r "$repo" '.repos[$r].path // ""' "$config")"
+  if [[ -z "$path_override" ]]; then
+    echo "$repos_root/$repo"
+  elif [[ "$path_override" == "." ]]; then
+    echo "$repos_root"
+  elif [[ "$path_override" == /* ]]; then
+    echo "$path_override"
+  else
+    echo "$repos_root/$path_override"
+  fi
+}
+
+resolve_workspace_repo() {
+  local repo="$1" path_override
+  path_override="$(jq -r --arg r "$repo" '.repos[$r].path // ""' "$config")"
+  if [[ "$path_override" == "." ]]; then
+    echo "$task_dir"
+  else
+    echo "$task_dir/$repo"
+  fi
+}
+
+repo_remote() {
+  local repo="$1"
+  jq -r --arg r "$repo" '.repos[$r].remote // "origin"' "$config"
+}
+
+repo_base() {
+  local repo="$1"
+  jq -r --arg r "$repo" '.repos[$r].base // "main"' "$config"
+}
+
+repo_path_override() {
+  local repo="$1"
+  jq -r --arg r "$repo" '.repos[$r].path // ""' "$config"
+}
+
+repo_state() {
+  local repo="$1" wt="$2" remote="$3" base="$4"
+  local exists="no" branch="-" head="-" dirty="-" merged="unknown"
+  if [[ -d "$wt/.git" || -f "$wt/.git" ]]; then
+    exists="yes"
+    branch="$(git -C "$wt" branch --show-current 2>/dev/null || true)"
+    [[ -n "$branch" ]] || branch="DETACHED"
+    head="$(git -C "$wt" rev-parse --short HEAD 2>/dev/null || true)"
+    [[ -n "$head" ]] || head="-"
+    if [[ -n "$(git -C "$wt" status --porcelain)" ]]; then
+      dirty="yes"
+    else
+      dirty="no"
+    fi
+    if git -C "$wt" show-ref --verify --quiet "refs/remotes/$remote/$base"; then
+      if git -C "$wt" merge-base --is-ancestor HEAD "refs/remotes/$remote/$base"; then
+        merged="yes"
+      else
+        merged="no"
+      fi
+    fi
+  fi
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$repo" "$wt" "$exists" "$branch" "$head" "$dirty" "$remote/$base" "$merged"
+}
+
+repos=()
+while IFS= read -r repo; do
+  repos+=("$repo")
+done < <(jq -r '.repos | keys[]' "$config")
+
+case "$cmd" in
+  status)
+    echo "TASK	$task"
+    echo "DIR	$task_dir"
+    echo "REPO	PATH	EXISTS	BRANCH	HEAD	DIRTY	BASE	MERGED_IN_BASE"
+    for repo in "${repos[@]}"; do
+      repo_state "$repo" "$(resolve_workspace_repo "$repo")" "$(repo_remote "$repo")" "$(repo_base "$repo")"
+    done
+    ;;
+
+  cleanup)
+    [[ -d "$task_dir" ]] || die "task workspace not found: $task_dir"
+
+    failed=0
+    for repo in "${repos[@]}"; do
+      wt="$(resolve_workspace_repo "$repo")"
+      [[ -d "$wt/.git" || -f "$wt/.git" ]] || continue
+      remote="$(repo_remote "$repo")"
+      base="$(repo_base "$repo")"
+      git -C "$wt" fetch --prune "$remote" "+refs/heads/$base:refs/remotes/$remote/$base" >/dev/null
+      if [[ -n "$(git -C "$wt" status --porcelain)" ]]; then
+        echo "BLOCK dirty repo: $repo $wt" >&2
+        failed=1
+      fi
+      if ! git -C "$wt" merge-base --is-ancestor HEAD "refs/remotes/$remote/$base"; then
+        echo "BLOCK not merged into $remote/$base: $repo $wt" >&2
+        failed=1
+      fi
+    done
+    [[ "$failed" -eq 0 ]] || die "cleanup refused"
+
+    sub_repos=()
+    root_repo=""
+    for repo in "${repos[@]}"; do
+      if [[ "$(repo_path_override "$repo")" == "." ]]; then
+        root_repo="$repo"
+      else
+        sub_repos+=("$repo")
+      fi
+    done
+
+    for repo in "${sub_repos[@]}"; do
+      wt="$(resolve_workspace_repo "$repo")"
+      [[ -d "$wt/.git" || -f "$wt/.git" ]] || continue
+      git -C "$(resolve_source_repo "$repo")" worktree remove --force "$wt"
+      echo "removed	$repo	$wt"
+    done
+    if [[ -n "$root_repo" && -d "$task_dir" ]]; then
+      git -C "$(resolve_source_repo "$root_repo")" worktree remove --force "$task_dir"
+      echo "removed	$root_repo	$task_dir"
+    else
+      rm -rf "$task_dir"
+    fi
+    ;;
+esac

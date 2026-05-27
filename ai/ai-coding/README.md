@@ -10,9 +10,11 @@ ai-coding/
 ├── README.md                     # 本文件
 ├── skills/                       # skill 真身(目录形式,每个含 SKILL.md)
 │   ├── start-task/SKILL.md       # 任务环境创建(Mac/home 自动按当前 host 选配置)
+│   ├── finish-task/SKILL.md      # 任务收尾(MR / release / cleanup 闭环)
 │   ├── nerve-server.md           # nerve 服务管理(文件形式,文档不是注册 skill)
 │   └── remote-dev.md             # dispatcher/worker playbook(同上)
 ├── worktree-task/                # 多仓 worktree 创建工具(bash 脚本)
+├── finish-task/                  # 任务收尾状态/清理工具(bash 脚本)
 ├── dev-project.json              # home/Linux 平台配置(repos_root=/home/...,remote/base)
 ├── dev-project.mac.json          # Mac/Darwin 平台配置(repos_root=/Users/...,remote/base)
 ├── dev-project.example.json      # 示例
@@ -68,12 +70,16 @@ Mac 和 home 路径不同,所以分两份;基线都显式写 remote/base:
 
 - A 档(日常开发):GitLab Issue 入口 → baseline worktree → worker 实现测试 → GitLab MR 关联 Issue → main 保护分支只经 MR 合并。
 - B 档(合并后):GitHub 只是镜像同步;部署/重启按当前 host 执行;Android release 独立于 MR 合并,需单独 bump/build/publish。
+- 收尾统一走 `finish-task` skill:先 `finish-task status`,确认 dirty/MR/release/merge 状态;合入后再 `finish-task cleanup` 清理任务工作区。
 
 ## 工具装机
 
 ```bash
 # worktree-task 进 PATH(已是 ~/.local/bin 软链)
 ln -sfn ~/work/ai-work-os/ai/ai-coding/worktree-task/worktree-task ~/.local/bin/worktree-task
+
+# finish-task 进 PATH
+ln -sfn ~/work/ai-work-os/ai/ai-coding/finish-task/finish-task ~/.local/bin/finish-task
 
 # 软链所有 skill 进 Claude/Codex
 for skill in ~/work/ai-work-os/ai/ai-coding/skills/*/; do
