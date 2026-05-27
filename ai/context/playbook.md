@@ -239,6 +239,7 @@ ssh home '
 | 路径 | 内容 |
 |---|---|
 | `~/.nerve/nerve.log` | nerve 主服务（所有节点 + spawn + ACP） |
+| `~/.nerve/plugins/system-watchdog/alerts/system-alerts.md` | system-watchdog 分钟级 alert 流水（runtime，不进 `~/.ai` git） |
 | `~/.nerve/plugins/ai-life-log/activity.log` | ai-life-log 自己的活动（capture/chunk/transcript/cleaner） |
 | `~/.nerve/plugins/ai-life-log/log/{date}.txt` | 转录文本，行格式 `[HH:MM:SS][source] text` |
 | `~/.nerve/plugins/ai-life-log/audio/{date}/{chunkId}.opus` | 手机上传的原始 Opus（`AI_LIFE_LOG_AUDIO_RETAIN_DAYS=7` 天） |
