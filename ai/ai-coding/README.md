@@ -73,7 +73,7 @@ Mac 和 home 路径不同,所以分两份;基线都显式写 remote/base:
 - A 档(日常开发):GitLab Issue 入口 → 主工作区同步检查 → baseline worktree → worker 实现测试 → GitLab MR 关联 Issue → main 保护分支默认只经 MR 合并。
 - 授权直推档:仅限低风险 docs/refactor/chore 且 TASK.md 明确写 `交付模式: 授权直推 main`。worker 必须验证、提交、必要时 rebase、推配置 remote/base,再报告 commit hash。主 agent 事后抽样审计,不是必经 merge gate。
 - B 档(合并后):GitHub 只是镜像同步;部署/重启按当前 host 执行;Android release 独立于 MR 合并,需单独 bump/build/publish。
-- 收尾统一走 `finish-task` skill:任务合入或授权直推完成后,当轮就跑 `finish-task status`;确认 clean 且 `MERGED_IN_BASE=yes` 后立即 `finish-task cleanup`。不要等用户另行提醒清 workspace。
+- 收尾统一走 `finish-task` skill:任务合入或授权直推完成后,当轮就跑 `finish-task complete --config "$CONFIG" --task <id>`。它会先打印 status,再在 clean 且 `MERGED_IN_BASE=yes` 时清理 workspace。不要等用户另行提醒清 workspace。
 
 ## 工具装机
 

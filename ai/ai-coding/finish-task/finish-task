@@ -11,10 +11,12 @@ finish-task — inspect or clean an ai-work-os task workspace
 Usage:
   finish-task status  --config <p> --task <id>
   finish-task cleanup --config <p> --task <id>
+  finish-task complete --config <p> --task <id>
 
 Notes:
   - status is read-only and prints per-repo closeout state.
   - cleanup refuses dirty repos and repos not merged into configured remote/base.
+  - complete prints status, then runs cleanup. Use it as the default closeout.
   - config accepts both workspace_root and legacy worktree_root.
 EOF
 }
@@ -37,7 +39,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ "$cmd" == "status" || "$cmd" == "cleanup" ]] || { usage; exit 1; }
+[[ "$cmd" == "status" || "$cmd" == "cleanup" || "$cmd" == "complete" ]] || { usage; exit 1; }
 [[ -n "$config" && -f "$config" ]] || die "config file not found: ${config:-<missing>}"
 [[ -n "$task" ]] || die "missing --task"
 command -v jq >/dev/null 2>&1 || die "jq not found"
@@ -127,7 +129,16 @@ case "$cmd" in
     done
     ;;
 
-  cleanup)
+  cleanup|complete)
+    if [[ "$cmd" == "complete" ]]; then
+      echo "TASK	$task"
+      echo "DIR	$task_dir"
+      echo "REPO	PATH	EXISTS	BRANCH	HEAD	DIRTY	BASE	MERGED_IN_BASE"
+      for repo in "${repos[@]}"; do
+        repo_state "$repo" "$(resolve_workspace_repo "$repo")" "$(repo_remote "$repo")" "$(repo_base "$repo")"
+      done
+    fi
+
     [[ -d "$task_dir" ]] || die "task workspace not found: $task_dir"
 
     failed=0

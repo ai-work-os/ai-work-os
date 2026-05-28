@@ -27,16 +27,25 @@ Close the loop for an ai-work-os task. This is the counterpart to `start-task`: 
    - If `MERGED_IN_BASE=no`: do not cleanup yet.
 4. After MR is merged, fetch base and cleanup:
    ```bash
-   finish-task cleanup --config "$CONFIG" --task <id>
+   finish-task complete --config "$CONFIG" --task <id>
    ```
 
 ## Cleanup Timing
 
-Do cleanup in the same closeout turn once the task is known to be in the configured base:
+Do cleanup in the same closeout turn once the task is known to be in the configured base. The default command is:
+
+```bash
+finish-task complete --config "$CONFIG" --task <id>
+```
+
+It prints status first, then removes the workspace if every existing repo is clean and merged into its configured `remote/base`.
+
 - MR flow: after the MR is merged and `finish-task status` shows `MERGED_IN_BASE=yes`.
 - Authorized direct-push flow: after the worker pushed main, fetched base, and `finish-task status` shows `MERGED_IN_BASE=yes`.
 
 Do not wait for the user to ask "can we clean this?". Cleanup is part of completion. Still refuse cleanup if any repo is dirty, missing, or not merged into configured `remote/base`.
+
+Completion reports must include the `finish-task complete` result. A task is not closed while its workspace still exists unless cleanup was explicitly blocked by dirty/unmerged state.
 
 ## Android Release Rule
 

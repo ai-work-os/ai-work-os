@@ -48,7 +48,7 @@ worker 必须满足:
 3. worktree clean,提交信息清楚。
 4. 推送前 fetch/rebase 到配置的 remote/base;冲突、测试失败、非快进或不确定影响面时停止并改走 MR/主 agent 审查。
 5. 推送配置里的目标基线:root 是 `gitlab/main`,子仓默认 `origin/main`;需要镜像同步时按任务卡或收尾流程处理。
-6. 频道报告 commit hash、验证命令、是否已清理 workspace。
+6. 频道报告 commit hash、验证命令、`finish-task complete` 结果。
 
 主 agent 对授权直推任务做事后抽样审计,不再作为每次 merge 的必经 gate。
 
@@ -65,4 +65,4 @@ B 档只在 A 档完成后发生,不要混进普通开发任务。
 
 - 默认不自动 merge,只推分支 `<type>/<id>` 等 review;授权直推必须写在 TASK.md。
 - TASK.md / plan.md / progress.md 是任务工作区临时文件,留在 worktree 顶层,**不进 git**。
-- 任务合入或授权直推完成后立即收尾:先 `finish-task status`,确认 clean 且已进入配置 remote/base,再 `finish-task cleanup`。不要等用户另行提醒。
+- 任务合入或授权直推完成后立即收尾:运行 `finish-task complete --config "$CONFIG" --task <id>`。不要等用户另行提醒。

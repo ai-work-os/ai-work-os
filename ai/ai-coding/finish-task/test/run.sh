@@ -96,6 +96,15 @@ assert_rc 0 "$rc" "metadata-only cleanup exits zero"
 assert_absent "$SB/workspaces/t1" "metadata-only task root removed"
 rm -rf "$SB" /tmp/finish-task-test.out
 
+echo "[5] complete prints status and removes merged workspace"
+SB="$(make_sandbox)"
+rc=0; "$FT" complete --config "$SB/config.json" --task t1 >/tmp/finish-task-test.out 2>&1 || rc=$?
+assert_rc 0 "$rc" "complete exits zero"
+assert_contains "$(cat /tmp/finish-task-test.out)" "MERGED_IN_BASE" "complete prints status first"
+assert_contains "$(cat /tmp/finish-task-test.out)" "removed" "complete reports cleanup"
+assert_absent "$SB/workspaces/t1" "complete removes task workspace"
+rm -rf "$SB" /tmp/finish-task-test.out
+
 echo
 echo "PASS=$PASS FAIL=$FAIL"
 [[ "$FAIL" -eq 0 ]]
