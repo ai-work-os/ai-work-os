@@ -48,6 +48,23 @@ EOF
   echo "$sb"
 }
 
+make_root_dot_sandbox() {
+  local sb
+  sb="$(mktemp -d)"
+  mkdir -p "$sb/root" "$sb/workspaces"
+  make_repo "$sb/root"
+  cat > "$sb/config.json" <<EOF
+{
+  "repos_root": "$sb/root",
+  "workspace_root": "$sb/workspaces",
+  "repos": {
+    "root": { "base": "main", "remote": "origin", "path": "." }
+  }
+}
+EOF
+  echo "$sb"
+}
+
 echo "[1] status shows workspace state"
 SB="$(make_sandbox)"
 out="$("$FT" status --config "$SB/config.json" --task t1)"
@@ -69,6 +86,15 @@ SB="$(make_sandbox)"
 "$FT" cleanup --config "$SB/config.json" --task t1 >/dev/null 2>&1
 assert_absent "$SB/workspaces/t1" "task workspace removed"
 rm -rf "$SB"
+
+echo "[4] cleanup removes metadata-only task root"
+SB="$(make_root_dot_sandbox)"
+mkdir -p "$SB/workspaces/t1"
+echo "# task" > "$SB/workspaces/t1/TASK.md"
+rc=0; "$FT" cleanup --config "$SB/config.json" --task t1 >/tmp/finish-task-test.out 2>&1 || rc=$?
+assert_rc 0 "$rc" "metadata-only cleanup exits zero"
+assert_absent "$SB/workspaces/t1" "metadata-only task root removed"
+rm -rf "$SB" /tmp/finish-task-test.out
 
 echo
 echo "PASS=$PASS FAIL=$FAIL"

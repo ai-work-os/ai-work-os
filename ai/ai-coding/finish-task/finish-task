@@ -164,11 +164,12 @@ case "$cmd" in
       git -C "$(resolve_source_repo "$repo")" worktree remove --force "$wt"
       echo "removed	$repo	$wt"
     done
-    if [[ -n "$root_repo" && -d "$task_dir" ]]; then
+    if [[ -n "$root_repo" && ( -d "$task_dir/.git" || -f "$task_dir/.git" ) ]]; then
       git -C "$(resolve_source_repo "$root_repo")" worktree remove --force "$task_dir"
       echo "removed	$root_repo	$task_dir"
-    else
+    elif [[ -d "$task_dir" ]]; then
       rm -rf "$task_dir"
+      echo "removed	metadata	$task_dir"
     fi
     ;;
 esac
