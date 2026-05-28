@@ -31,10 +31,11 @@ worker 启动 / spawn / 调度由 nerve scene 配置处理,不在本流程范围
 A 档是默认开发流程,只处理"从需求到 MR 合并"。
 
 1. GitLab Issue 是入口:用户给 Issue 就关联;没给就 TASK.md 标 `Issue: <待创建/待关联>`。
-2. `start-task` 澄清需求后做 baseline preflight,`worktree-task create` 从配置 remote/base 最新 commit 建 worktree。
-3. worker 在任务 worktree 内改代码、跑测试、提交分支。
-4. MR 是交付出口:推到 GitLab 后创建 MR,MR 关联 Issue,让看板跟 Issue/MR 状态走。
-5. `main` 受保护:不要直接 push main,通过 MR review/merge 进入 main。
+2. `start-task` 澄清需求后先做主工作区同步检查,再做 baseline preflight;代码地图预侦察不得基于旧 checkout。
+3. `worktree-task create` 从配置 remote/base 最新 commit 建 worktree。
+4. worker 在任务 worktree 内改代码、跑测试、提交分支。
+5. MR 是交付出口:推到 GitLab 后创建 MR,MR 关联 Issue,让看板跟 Issue/MR 状态走。
+6. `main` 受保护:不要直接 push main,通过 MR review/merge 进入 main。
 
 ## B 档:合并后同步与发布
 

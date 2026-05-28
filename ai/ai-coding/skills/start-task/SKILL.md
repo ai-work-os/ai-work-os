@@ -38,7 +38,23 @@ esac
 
 `worktree-task create` 会按配置对每个 repo 先 `fetch` 远端基线,再从 `remote/base` 的最新 commit 创建 worktree。配置里的 root `ai-work-os` 基线是 `gitlab/main`,子仓是 `origin/main`。
 
-预侦察必须和远端基线对齐:不要用当前 checkout 或可能落后的本地 `main` 当代码地图。需要读代码时,先确认对应 repo 的远端基线已刷新,或在刚创建出的 worktree 里读。
+**主工作区同步检查必须在预侦察之前做。** 对本次涉及的 repo(默认全切任务就是 config 里的全部 repo)逐个检查:
+
+```bash
+git status --short --branch
+git switch main
+git fetch --all --prune
+git pull --ff-only
+git branch --all --list '*dev*'
+```
+
+边界:
+- 工作区 dirty 时不要硬切 / 硬拉,先停下来说明。
+- 当前分支不是 `main` 时,只有工作区干净才切回 `main`;`dev` 已废弃,看到 `dev` 视为环境异常。
+- `git pull --ff-only` 失败时不要继续用旧 checkout 预侦察。
+- 这一步是为了让代码地图不落后;任务 worktree 仍由 `worktree-task create` 从远端基线创建。
+
+预侦察必须和远端基线对齐:不要用当前 checkout 或可能落后的本地 `main` 当代码地图。需要读代码时,先完成上面的主工作区同步检查,确认对应 repo 的远端基线已刷新,或在刚创建出的 worktree 里读。
 
 定位:
 - 要改的文件:`path/to/file.ts:line`
@@ -83,7 +99,7 @@ worker 完工后创建 MR,把 MR URL 回填 TASK.md 或频道报告;不要把临
 ## 红旗
 
 - 需求没说清就建 worktree → 代码地图会空,worker 盲跑
-- 没做 baseline preflight / 用旧 checkout 预侦察 → 代码地图可能指向旧实现
+- 没做主工作区同步检查 / baseline preflight / 用旧 checkout 预侦察 → 代码地图可能指向旧实现
 - 没预侦察就建 worktree → worker 仍会盲跑
 - 有 Issue 却没关联到 TASK.md / MR → 看板会断链
 - 边干边填 TASK.md → 不行,任务卡是 worker 的输入,不是事后笔记

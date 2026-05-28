@@ -52,6 +52,7 @@
 - 客户端发消息**不要加 `node_name:` 前缀** —— 服务端已统一处理,加了反而格式出错。
 - 插件等频道用事件驱动(`channel.nodeJoined`),不要 poll;集成测试避免 hardcoded sleep,用事件驱动 + waitFor。
 - worktree 任务文件(TASK.md / plan.md / progress.md)freestanding 放 worktree 根目录,不属任何 git 仓,天然被各子仓 worktree 共享。需要软链才能"够得着"上下文 = 结构错位信号(例外:适配外部工具写死的文件名如 CLAUDE.md)。
+- `start-task` 预侦察前必须同步本次涉及的主工作区:干净工作区才切 `main`,再 `fetch --all --prune` + `pull --ff-only`。不得基于旧 `dev` 或落后 `main` 画代码地图。
 - worker 收尾时将本次发现的坑/规范写回 `ai/context/`,随代码一起 commit —— "过滤器不是水龙头"。
 
 ---

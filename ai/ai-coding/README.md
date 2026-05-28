@@ -64,11 +64,13 @@ Mac 和 home 路径不同,所以分两份;基线都显式写 remote/base:
 | `dev-project.json` | home(Linux) | `/home/renjinxi/...` | root `gitlab/main`,子仓 `origin/main` |
 | `dev-project.mac.json` | Mac(Darwin) | `/Users/renjinxi/...` | root `gitlab/main`,子仓 `origin/main` |
 
-`worktree-task create` 会先 fetch 配置的 remote/base,再从远端最新 commit 建 worktree,并把 baseline 写进 TASK.md。
+`start-task` 做代码地图预侦察前,必须先把本次涉及的主工作区同步到 `main` 最新状态:工作区干净才允许 `git switch main`,再 `git fetch --all --prune && git pull --ff-only`。如果 dirty、非 fast-forward、或仍看到 `dev` 分支残留,先停下来说明,不要用旧 checkout 预侦察。
+
+`worktree-task create` 会先 fetch 配置的 remote/base,再从远端最新 commit 建 worktree,并把 baseline 写进 TASK.md。主工作区同步是为了预侦察不落后;任务分支仍以 `worktree-task` 写入的 remote/base 为准。
 
 ## A+B 档交付流程
 
-- A 档(日常开发):GitLab Issue 入口 → baseline worktree → worker 实现测试 → GitLab MR 关联 Issue → main 保护分支只经 MR 合并。
+- A 档(日常开发):GitLab Issue 入口 → 主工作区同步检查 → baseline worktree → worker 实现测试 → GitLab MR 关联 Issue → main 保护分支只经 MR 合并。
 - B 档(合并后):GitHub 只是镜像同步;部署/重启按当前 host 执行;Android release 独立于 MR 合并,需单独 bump/build/publish。
 - 收尾统一走 `finish-task` skill:先 `finish-task status`,确认 dirty/MR/release/merge 状态;合入后再 `finish-task cleanup` 清理任务工作区。
 
