@@ -46,7 +46,7 @@ npm run test:e2e          # e2e 测试
 npm run test:all          # 全量(unit + integration + e2e)
 ```
 
-**注:** 工作路径是 `~/work/worktree/ai-work-os/nerve/`(dev 分支)。`nerve-server` 命令封装了常用操作(见 `ai-coding/skills/nerve-server.md`)。
+**注:** 工作路径是 `~/work/worktree/ai-work-os/nerve/`(dev 分支)。Mac 开发机上的 `nerve-server` wrapper 封装了常用操作(见 `ai-coding/skills/nerve-server.md`);home/Linux 本机不要假设该 wrapper 存在,按本机路径和 `systemctl --user` 执行等价命令。
 
 ---
 
@@ -87,7 +87,7 @@ nerve-tui --host 127.0.0.1 --port 4800
 # 连真机后安装
 ./gradlew installDebug
 
-# 或用封装命令
+# Mac 开发机可用封装命令
 nerve-server build android       # 只构建
 nerve-server install android     # 构建 + adb install
 ```
@@ -110,7 +110,7 @@ nerve-server install android     # 构建 + adb install
 
 ## nerve 重启 / 发版 / 部署
 
-### 本机开发 nerve 管理
+### 本机开发 nerve 管理（Mac wrapper）
 
 ```bash
 nerve-server start    # 启动(端口 4800,pid 写 ~/.nerve/server.pid)
@@ -118,6 +118,14 @@ nerve-server stop     # 杀进程(按 pid + 端口)
 nerve-server restart  # 完整清理再起
 nerve-server status   # 查状态
 nerve-server log      # tail -f ~/.nerve/nerve.log
+```
+
+这些命令只按 Mac 开发机 wrapper 处理。当前 host 是 home/Linux 时,生产 nerve 由 user-level systemd 管:
+
+```bash
+systemctl --user status nerve
+systemctl --user restart nerve
+journalctl --user -u nerve -n 100
 ```
 
 **重启必须干净:** 要杀掉旧进程(nerve + agent + mcp)、确认端口释放、再单实例启动。不能双实例。
@@ -138,7 +146,7 @@ ssh home '
 '
 ```
 
-如果当前已经在 home 本机,不要 `ssh home`;直接执行引号内命令。
+如果当前已经在 home 本机,不要 `ssh home`,也不要假设 `nerve-server` 存在;直接执行引号内命令。
 
 **关键:** home 跑的是 `dist/`,改完 TS 必须 `npm run build` 才生效。
 
@@ -184,7 +192,7 @@ runner 要求:
 
 ### 手动发布（备用）
 
-完整发版流程(一条命令):
+Mac 开发机完整发版流程(一条 wrapper 命令):
 
 ```bash
 nerve-server publish-android "本次更新说明"
@@ -202,6 +210,7 @@ git pull origin main
 versionCode = N+1
 versionName = "0.x.y"
 git commit -am "release(android): bump versionCode N→N+1 — 说明"
+# Mac 开发机 wrapper;home/Linux 本机按 Gradle/copy/version JSON 等价流程执行
 nerve-server publish-android "说明"
 ```
 
@@ -231,13 +240,14 @@ APK URL: `http://100.75.43.90/nerve-app.apk`
 chmod 600 ~/.nerve/secrets/nerve-app-release.jks
 ```
 
-`nerve-server publish-android` 支持通过环境变量指定签名:
+Mac 开发机的 `nerve-server publish-android` 支持通过环境变量指定签名:
 
 ```bash
 export NERVE_ANDROID_KEYSTORE="$HOME/.nerve/secrets/nerve-app-release.jks"
 export NERVE_ANDROID_KEYSTORE_PASSWORD="..."
 export NERVE_ANDROID_KEY_ALIAS="nerve-app"
 export NERVE_ANDROID_KEY_PASSWORD="..."
+# Mac 开发机 wrapper
 nerve-server publish-android "本次更新说明"
 ```
 
