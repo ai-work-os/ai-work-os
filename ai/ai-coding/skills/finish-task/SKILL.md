@@ -30,6 +30,14 @@ Close the loop for an ai-work-os task. This is the counterpart to `start-task`: 
    finish-task cleanup --config "$CONFIG" --task <id>
    ```
 
+## Cleanup Timing
+
+Do cleanup in the same closeout turn once the task is known to be in the configured base:
+- MR flow: after the MR is merged and `finish-task status` shows `MERGED_IN_BASE=yes`.
+- Authorized direct-push flow: after the worker pushed main, fetched base, and `finish-task status` shows `MERGED_IN_BASE=yes`.
+
+Do not wait for the user to ask "can we clean this?". Cleanup is part of completion. Still refuse cleanup if any repo is dirty, missing, or not merged into configured `remote/base`.
+
 ## Android Release Rule
 
 Do not treat MR merge as Android release. For `nerve-app` release work:

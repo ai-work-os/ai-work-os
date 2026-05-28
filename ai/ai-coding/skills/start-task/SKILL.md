@@ -96,11 +96,20 @@ Edit `<worktree_root>/<id>/TASK.md` 替换三个占位符:
 
 worker 完工后创建 MR,把 MR URL 回填 TASK.md 或频道报告;不要把临时进度当看板真相源。
 
+### 4. 交付模式
+
+TASK.md 必须写清交付模式:
+
+- `交付模式: MR 审查`(默认):worker 推任务分支,创建 GitLab MR,等待审查/合并。
+- `交付模式: 授权直推 main`:仅在用户或主 agent 明确授权、且任务是低风险 docs/refactor/chore 时使用。worker 完成验证后可 fetch/rebase 到配置 remote/base,直接推 main 并报告 commit hash。冲突、测试失败、非快进、影响面不确定时自动降级为 MR 审查。
+
+不要把"低风险"自行扩大到功能开发、生产运维、Android release、数据迁移或任何不可逆动作。
+
 ## 红旗
 
 - 需求没说清就建 worktree → 代码地图会空,worker 盲跑
 - 没做主工作区同步检查 / baseline preflight / 用旧 checkout 预侦察 → 代码地图可能指向旧实现
 - 没预侦察就建 worktree → worker 仍会盲跑
-- 有 Issue 却没关联到 TASK.md / MR → 看板会断链
+- 有 Issue 却没关联到 TASK.md / MR 或直推报告 → 看板会断链
 - 边干边填 TASK.md → 不行,任务卡是 worker 的输入,不是事后笔记
 - cwd 已在 worktree 里(路径含 `worktree/ai-work-os/<task-id>`)还触发 → 反问是不是子任务,不要套娃

@@ -93,6 +93,28 @@ WS 半开连接会导致节点假在线:机器睡眠/网络抖动后客户端不
 
 Agent 调用 Write/Edit 工具期间收到新消息可能被打断,文件未写入且不自动恢复。操作:不要在 agent 写文件期间催促;如果 agent 卡住优先起新 agent 重做。
 
+### Codex 沙箱依赖 bwrap + AppArmor 放行
+
+home/Ubuntu 24.04 上 Codex 默认沙箱依赖 `/usr/bin/bwrap`。若缺包会报 `bubblewrap is unavailable`;若装包后报 `bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted`,通常是 AppArmor 的 `kernel.apparmor_restrict_unprivileged_userns=1` 拦了没有 profile 的 bwrap。
+
+修复:
+```bash
+sudo apt-get install -y bubblewrap
+sudo tee /etc/apparmor.d/bwrap >/dev/null <<'EOF'
+abi <abi/4.0>,
+include <tunables/global>
+
+profile bwrap /usr/bin/bwrap flags=(unconfined) {
+  userns,
+
+  include if exists <local/bwrap>
+}
+EOF
+sudo apparmor_parser -r /etc/apparmor.d/bwrap
+```
+
+验证:普通 Codex shell 命令不再需要 escalated fallback,`command -v bwrap` 能在沙箱内返回 `/usr/bin/bwrap`。
+
 ### Agent 空转不写文件
 
 Agent 可能在 thinking 中规划了代码但没实际调用 Write/Edit,却报告完成。检验方法:要求 agent 完成后跑 `git diff --stat` 或 `cargo check` 验证改动存在;reviewer 先检查文件是否有实际改动。

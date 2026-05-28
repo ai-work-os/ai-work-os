@@ -112,6 +112,7 @@ CFG="$(write_config "$SB")"
 assert_file "$SB/wt/t2/TASK.md" "TASK.md 已建"
 assert_grep "$SB/wt/t2/TASK.md" "t2" "TASK.md 含任务 id"
 assert_grep "$SB/wt/t2/TASK.md" "Issue: <待创建/待关联>" "TASK.md 含 Issue 占位"
+assert_grep "$SB/wt/t2/TASK.md" "交付模式: MR 审查" "TASK.md 含默认交付模式"
 rm -rf "$SB"
 
 # ── 用例 3:list 列出已建任务工作区 ─────────────────────────────

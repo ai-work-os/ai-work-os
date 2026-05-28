@@ -166,6 +166,7 @@ ${baseline_md:-<未创建 repo worktree>}
 - Issue: <待创建/待关联>
 - MR: <待创建>
 - 看板: <跟随 GitLab Issue/MR>
+- 交付模式: MR 审查
 
 ## 需求
 
