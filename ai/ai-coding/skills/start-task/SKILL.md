@@ -82,7 +82,7 @@ git branch --all --list '*dev*'
 worktree-task create --config "$CONFIG" --task <id> --type <type>
 ```
 
-分支名自动 `<type>/<id>`(例 `fix/retry-logic-0526`)。工具默认全切,不传 `--repos`。骨架 `TASK.md` 自动写入 `<workspace_root>/<id>/`(当前配置字段仍名为 `worktree_root`;根 `.gitignore` 屏蔽 TASK.md,不进 git),并包含每个 repo 的 baseline `repo: remote/base @ commit`。
+分支名自动 `<type>/<id>`(例 `fix/retry-logic-0526`)。工具默认全切,不传 `--repos`。骨架 `TASK.md` 自动写入 `<workspace_root>/<id>/`(根 `.gitignore` 屏蔽 TASK.md,不进 git),并包含每个 repo 的 baseline `repo: remote/base @ commit`。
 
 Edit `<workspace_root>/<id>/TASK.md` 替换三个占位符:
 - `<做什么、为什么>` → 澄清后的需求 + 动机
@@ -112,4 +112,4 @@ TASK.md 必须写清交付模式:
 - 没预侦察就建 Workspace → worker 仍会盲跑
 - 有 Issue 却没关联到 TASK.md / MR 或直推报告 → 看板会断链
 - 边干边填 TASK.md → 不行,任务卡是 worker 的输入,不是事后笔记
-- cwd 已在 Workspace 里(路径含 `worktree/ai-work-os/<task-id>`)还触发 → 反问是不是子任务,不要套娃
+- cwd 已在 Workspace 里(路径含 `workspace/ai-work-os/<task-id>`)还触发 → 反问是不是子任务,不要套娃

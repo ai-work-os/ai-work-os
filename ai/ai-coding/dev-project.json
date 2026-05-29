@@ -1,7 +1,7 @@
 {
   "project": "ai-work-os",
   "repos_root": "/home/renjinxi/work/ai-work-os",
-  "worktree_root": "/home/renjinxi/work/worktree/ai-work-os",
+  "workspace_root": "/home/renjinxi/work/workspace/ai-work-os",
   "repos": {
     "ai-work-os": { "base": "main", "remote": "gitlab", "path": "." },
     "nerve": { "base": "main", "remote": "origin" },

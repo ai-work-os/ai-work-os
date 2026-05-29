@@ -33,9 +33,9 @@
 |----|----|------|---------|
 | 个人层 | `~/.ai/` | 日报 / duty / memory | 不碰,自有 `~/.ai/ops/config/directory-structure.md` 管 |
 | **项目层** | **根仓库 `ai-work-os/`**(本文件 + `ai/` 子目录) | super-project 级 AI 配置 + 项目知识 | 长期沉淀,随根仓库走 |
-| 任务层 | worktree 任务根目录 | `TASK.md` / `plan.md` / `progress.md`,freestanding 不进 git | 临时,随 worktree 清理 |
+| 任务层 | Workspace 任务根目录 | `TASK.md` / `plan.md` / `progress.md`,freestanding 不进 git | 临时,随 Workspace 清理 |
 
-**铁律**:临时状态进任务层(worktree 根),长期沉淀进项目层(根仓库)。不要把任务进度塞进根仓库稀释它;也不要把规范留在临时任务区被归档埋葬。
+**铁律**:临时状态进任务层(Workspace 根),长期沉淀进项目层(根仓库)。不要把任务进度塞进根仓库稀释它;也不要把规范留在临时任务区被归档埋葬。
 
 ---
 

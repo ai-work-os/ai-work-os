@@ -37,7 +37,7 @@ assert_absent() { # 路径 描述
 
 make_sandbox() {
   local sb; sb="$(mktemp -d)"
-  mkdir -p "$sb/repos" "$sb/wt"
+  mkdir -p "$sb/repos" "$sb/workspaces"
   echo "$sb"
 }
 make_repo() { # sandbox 名字 [基线分支=dev]
@@ -86,7 +86,7 @@ write_config() { # sandbox [repo:base[:remote] ...]  默认 myrepo:dev  -> 打�
 {
   "project": "test",
   "repos_root": "$sb/repos",
-  "worktree_root": "$sb/wt",
+  "workspace_root": "$sb/workspaces",
   "repos": { ${entries%,} }
 }
 EOF
@@ -99,8 +99,8 @@ SB="$(make_sandbox)"
 make_repo "$SB" myrepo
 CFG="$(write_config "$SB")"
 "$WT" create --config "$CFG" --task t1 --repos myrepo > /dev/null 2>&1
-assert_dir "$SB/wt/t1/myrepo" "worktree 目录已建"
-assert_eq "feat/t1" "$(git -C "$SB/wt/t1/myrepo" branch --show-current 2>/dev/null)" "分支是 feat/t1"
+assert_dir "$SB/workspaces/t1/myrepo" "Workspace 目录已建"
+assert_eq "feat/t1" "$(git -C "$SB/workspaces/t1/myrepo" branch --show-current 2>/dev/null)" "分支是 feat/t1"
 rm -rf "$SB"
 
 # ── 用例 2:create 在任务根写 TASK.md 骨架 ──────────────────────
@@ -109,10 +109,10 @@ SB="$(make_sandbox)"
 make_repo "$SB" myrepo
 CFG="$(write_config "$SB")"
 "$WT" create --config "$CFG" --task t2 --repos myrepo > /dev/null 2>&1
-assert_file "$SB/wt/t2/TASK.md" "TASK.md 已建"
-assert_grep "$SB/wt/t2/TASK.md" "t2" "TASK.md 含任务 id"
-assert_grep "$SB/wt/t2/TASK.md" "Issue: <待创建/待关联>" "TASK.md 含 Issue 占位"
-assert_grep "$SB/wt/t2/TASK.md" "交付模式: MR 审查" "TASK.md 含默认交付模式"
+assert_file "$SB/workspaces/t2/TASK.md" "TASK.md 已建"
+assert_grep "$SB/workspaces/t2/TASK.md" "t2" "TASK.md 含任务 id"
+assert_grep "$SB/workspaces/t2/TASK.md" "Issue: <待创建/待关联>" "TASK.md 含 Issue 占位"
+assert_grep "$SB/workspaces/t2/TASK.md" "交付模式: MR 审查" "TASK.md 含默认交付模式"
 rm -rf "$SB"
 
 # ── 用例 3:list 列出已建任务工作区 ─────────────────────────────
@@ -132,7 +132,7 @@ make_repo "$SB" myrepo
 CFG="$(write_config "$SB")"
 "$WT" create --config "$CFG" --task t1 --repos myrepo > /dev/null 2>&1
 "$WT" remove --config "$CFG" --task t1 > /dev/null 2>&1
-assert_absent "$SB/wt/t1" "任务目录已删除"
+assert_absent "$SB/workspaces/t1" "任务目录已删除"
 assert_eq "1" "$(git -C "$SB/repos/myrepo" worktree list | wc -l | tr -d ' ')" "源仓只剩主 worktree"
 rm -rf "$SB"
 
@@ -143,10 +143,10 @@ make_repo "$SB" a
 make_repo "$SB" b
 CFG="$(write_config "$SB" a:dev b:dev)"
 "$WT" create --config "$CFG" --task t5 --repos a,b > /dev/null 2>&1
-assert_dir "$SB/wt/t5/a" "repo a 的 worktree 已建"
-assert_dir "$SB/wt/t5/b" "repo b 的 worktree 已建"
-assert_eq "feat/t5" "$(git -C "$SB/wt/t5/a" branch --show-current 2>/dev/null)" "a 分支 feat/t5"
-assert_eq "feat/t5" "$(git -C "$SB/wt/t5/b" branch --show-current 2>/dev/null)" "b 分支 feat/t5"
+assert_dir "$SB/workspaces/t5/a" "repo a 的 Workspace 已建"
+assert_dir "$SB/workspaces/t5/b" "repo b 的 Workspace 已建"
+assert_eq "feat/t5" "$(git -C "$SB/workspaces/t5/a" branch --show-current 2>/dev/null)" "a 分支 feat/t5"
+assert_eq "feat/t5" "$(git -C "$SB/workspaces/t5/b" branch --show-current 2>/dev/null)" "b 分支 feat/t5"
 rm -rf "$SB"
 
 # ── 用例 6:create 任务已存在时报错退出 ─────────────────────────
@@ -178,8 +178,8 @@ SB="$(make_sandbox)"
 make_cloned_repo "$SB" myrepo
 CFG="$(write_config "$SB")"
 "$WT" create --config "$CFG" --task t9 --repos myrepo > /dev/null 2>&1
-assert_eq "feat/t9" "$(git -C "$SB/wt/t9/myrepo" branch --show-current 2>/dev/null)" "分支是 feat/t9(非 dev)"
-assert_absent "$SB/wt/t9/dev" "无多余 dev 目录"
+assert_eq "feat/t9" "$(git -C "$SB/workspaces/t9/myrepo" branch --show-current 2>/dev/null)" "分支是 feat/t9(非 dev)"
+assert_absent "$SB/workspaces/t9/dev" "无多余 dev 目录"
 rm -rf "$SB"
 
 # ── 用例 10:本地 base 落后远端时使用远端最新 commit ─────────────
@@ -189,9 +189,9 @@ make_stale_cloned_repo "$SB" myrepo
 CFG="$(write_config "$SB")"
 remote_hash="$(git -C "$SB/repos/myrepo" ls-remote origin refs/heads/dev | awk '{print $1}')"
 "$WT" create --config "$CFG" --task t10 --repos myrepo > /dev/null 2>&1
-wt_hash="$(git -C "$SB/wt/t10/myrepo" rev-parse HEAD)"
-assert_eq "$remote_hash" "$wt_hash" "worktree HEAD 使用 origin/dev 最新 commit"
-assert_grep "$SB/wt/t10/TASK.md" "$remote_hash" "TASK.md 记录 baseline commit"
+wt_hash="$(git -C "$SB/workspaces/t10/myrepo" rev-parse HEAD)"
+assert_eq "$remote_hash" "$wt_hash" "Workspace HEAD 使用 origin/dev 最新 commit"
+assert_grep "$SB/workspaces/t10/TASK.md" "$remote_hash" "TASK.md 记录 baseline commit"
 rm -rf "$SB"
 
 # ── 用例 11:配置 remote 非 origin 时使用对应远端 ────────────────
@@ -201,9 +201,26 @@ make_stale_cloned_repo "$SB" myrepo gitlab
 CFG="$(write_config "$SB" myrepo:dev:gitlab)"
 remote_hash="$(git -C "$SB/repos/myrepo" ls-remote gitlab refs/heads/dev | awk '{print $1}')"
 "$WT" create --config "$CFG" --task t11 --repos myrepo > /dev/null 2>&1
-wt_hash="$(git -C "$SB/wt/t11/myrepo" rev-parse HEAD)"
-assert_eq "$remote_hash" "$wt_hash" "worktree HEAD 使用 gitlab/dev 最新 commit"
-assert_grep "$SB/wt/t11/TASK.md" "gitlab/dev" "TASK.md 记录非 origin baseline ref"
+wt_hash="$(git -C "$SB/workspaces/t11/myrepo" rev-parse HEAD)"
+assert_eq "$remote_hash" "$wt_hash" "Workspace HEAD 使用 gitlab/dev 最新 commit"
+assert_grep "$SB/workspaces/t11/TASK.md" "gitlab/dev" "TASK.md 记录非 origin baseline ref"
+rm -rf "$SB"
+
+# ── 用例 12:兼容旧 worktree_root 配置字段 ─────────────────────
+echo "[12] create:兼容旧 worktree_root 配置字段"
+SB="$(make_sandbox)"
+make_repo "$SB" myrepo
+CFG="$SB/legacy-project.json"
+cat > "$CFG" <<EOF
+{
+  "project": "test",
+  "repos_root": "$SB/repos",
+  "worktree_root": "$SB/legacy-wt",
+  "repos": { "myrepo": { "base": "dev" } }
+}
+EOF
+"$WT" create --config "$CFG" --task t12 --repos myrepo > /dev/null 2>&1
+assert_dir "$SB/legacy-wt/t12/myrepo" "旧 worktree_root 仍可创建 Workspace"
 rm -rf "$SB"
 
 echo

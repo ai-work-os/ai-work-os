@@ -46,7 +46,7 @@ npm run test:e2e          # e2e 测试
 npm run test:all          # 全量(unit + integration + e2e)
 ```
 
-**注:** 工作路径是 `~/work/worktree/ai-work-os/nerve/`(dev 分支)。Mac 开发机上的 `nerve-server` wrapper 封装了常用操作(见 `ai-coding/skills/nerve-server.md`);home/Linux 本机不要假设该 wrapper 存在,按本机路径和 `systemctl --user` 执行等价命令。
+**注:** 任务 Workspace 内工作路径是 `~/work/workspace/ai-work-os/<task-id>/nerve/`。Mac 开发机上的 `nerve-server` wrapper 封装了常用操作(见 `ai-coding/skills/nerve-server.md`);home/Linux 本机不要假设该 wrapper 存在,按本机路径和 `systemctl --user` 执行等价命令。
 
 ---
 
@@ -71,7 +71,7 @@ scripts/update.sh
 nerve-tui --host 127.0.0.1 --port 4800
 ```
 
-**工作路径:** `~/work/worktree/ai-work-os/nerve-tui/`
+**任务 Workspace 内工作路径:** `~/work/workspace/ai-work-os/<task-id>/nerve-tui/`
 
 ---
 
@@ -92,7 +92,7 @@ nerve-server build android       # 只构建
 nerve-server install android     # 构建 + adb install
 ```
 
-**工作路径:** `~/work/worktree/ai-work-os/nerve-app/`(包名 `com.nerve.android`)
+**任务 Workspace 内工作路径:** `~/work/workspace/ai-work-os/<task-id>/nerve-app/`(包名 `com.nerve.android`)
 
 ---
 

@@ -28,7 +28,7 @@ ai-work-os 是"活着的 AI 操作系统" —— 让 AI 持续工作、人随时
 
 **本地路径:**
 - 主仓库(main): `~/work/ai-work-os/nerve/`
-- worktree(dev): `~/work/worktree/ai-work-os/nerve/`
+- Workspace: `~/work/workspace/ai-work-os/<task-id>/nerve/`
 
 **顶层结构:**
 - `src/` — 核心代码,已分层:`transport/ storage/ channel/ node/ scene/ agent/ mcp/ infra/ integration/ channel-mcp/`,顶层只剩 `cli.ts server.ts index.ts`
@@ -59,7 +59,7 @@ ai-work-os 是"活着的 AI 操作系统" —— 让 AI 持续工作、人随时
 
 **本地路径:**
 - 主仓库(main): `~/work/ai-work-os/nerve-app/`
-- worktree(dev): `~/work/worktree/ai-work-os/nerve-app/`
+- Workspace: `~/work/workspace/ai-work-os/<task-id>/nerve-app/`
 
 **包名:** `com.nerve.android`(不变)
 
@@ -79,7 +79,7 @@ ai-work-os 是"活着的 AI 操作系统" —— 让 AI 持续工作、人随时
 
 **本地路径:**
 - 主仓库(main): `~/work/ai-work-os/nerve-tui/`
-- worktree(dev): `~/work/worktree/ai-work-os/nerve-tui/`
+- Workspace: `~/work/workspace/ai-work-os/<task-id>/nerve-tui/`
 
 ---
 

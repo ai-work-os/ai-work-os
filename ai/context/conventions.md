@@ -31,7 +31,7 @@
 
 ### Android 开发
 
-- **当前项目是 nerve-app**,旧版 `nerve-android` 已废弃永不改。代码路径: `~/work/worktree/ai-work-os/nerve-app/`。
+- **当前项目是 nerve-app**,旧版 `nerve-android` 已废弃永不改。任务 Workspace 内代码路径: `~/work/workspace/ai-work-os/<task-id>/nerve-app/`。
 - **包名: `com.nerve.android`**。`applicationId` 虽是 `com.nerve.app` 但 `adb` 命令用包名 `com.nerve.android`。
 - **Android 端不做本地持久化:** server buffer 是唯一真相源,DM 消息只存内存,内存中消息列表永远不清空(靠 replay 去重追加)。给 AI 写代码时必须显式说明此约束。
 - **Android 功能完工默认 bump versionCode + publish-android**,不要停在 push。

@@ -56,13 +56,13 @@ pwd
 
 ## 双平台配置策略
 
-`worktree-task` 用 JSON 配置决定 `repos_root` / `worktree_root` / 各 repo 远端基线。对人和流程层统一叫 Workspace;`worktree_root` 是历史配置字段和 git 底层实现名。
+`worktree-task` 用 JSON 配置决定 `repos_root` / `workspace_root` / 各 repo 远端基线。对人和流程层统一叫 Workspace;旧配置字段 `worktree_root` 仅作为兼容 fallback。
 Mac 和 home 路径不同,所以分两份;基线都显式写 remote/base:
 
 | 文件 | 平台 | 路径前缀 | 基线 |
 |---|---|---|---|
-| `dev-project.json` | home(Linux) | `/home/renjinxi/...` | root `gitlab/main`,子仓 `origin/main` |
-| `dev-project.mac.json` | Mac(Darwin) | `/Users/renjinxi/...` | root `gitlab/main`,子仓 `origin/main` |
+| `dev-project.json` | home(Linux) | `/home/renjinxi/work/workspace/ai-work-os` | root `gitlab/main`,子仓 `origin/main` |
+| `dev-project.mac.json` | Mac(Darwin) | `/Users/renjinxi/work/workspace/ai-work-os` | root `gitlab/main`,子仓 `origin/main` |
 
 `start-task` 做代码地图预侦察前,必须先把本次涉及的主工作区同步到 `main` 最新状态:工作区干净才允许 `git switch main`,再 `git fetch --all --prune && git pull --ff-only`。如果 dirty、非 fast-forward、或仍看到 `dev` 分支残留,先停下来说明,不要用旧 checkout 预侦察。
 

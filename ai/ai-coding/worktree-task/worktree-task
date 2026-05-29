@@ -20,7 +20,7 @@ worktree-task — 多仓库任务工作区管理
 注:
   - --type 缺省 feat。分支名 <type>/<task-id>(如 feat/retry-logic-0526)
   - --repos 不传时默认 config 里所有 repos(全切,省得判断)
-  - 配置里有 "path": "." 的 root repo,worktree 占 $task_dir 顶层,
+  - 配置里有 "path": "." 的 root repo,Workspace 占 $task_dir 顶层,
     其他子 repos 嵌套在 $task_dir/<repo>/ 下(跟主仓库结构一致)
 EOF
 }
@@ -46,8 +46,9 @@ case "$cmd" in create|list|remove)
 case "$cmd" in
   create)
     repos_root="$(jq -r '.repos_root' "$config")"
-    worktree_root="$(jq -r '.worktree_root' "$config")"
-    task_dir="$worktree_root/$task"
+    workspace_root="$(jq -r '.workspace_root // .worktree_root // ""' "$config")"
+    [[ -n "$workspace_root" && "$workspace_root" != "null" ]] || die "config missing workspace_root/worktree_root"
+    task_dir="$workspace_root/$task"
     [[ -e "$task_dir" ]] && die "任务工作区已存在: $task_dir（先 remove,或换 task id）"
     # 不传 --repos 时默认所有 config 里的 repos(全切,省得判定哪些用得到)
     if [[ -z "$repos" ]]; then
@@ -58,7 +59,7 @@ case "$cmd" in
     branch_name="$type/$task"
     log "create task=$task type=$type repos=$repos config=$config"
     log "  branch will be: $branch_name"
-    mkdir -p "$worktree_root"
+    mkdir -p "$workspace_root"
 
     # 工具函数:解析 repo path
     resolve_repo_path() {
@@ -106,9 +107,9 @@ case "$cmd" in
     }
 
     # 分两轮处理:
-    # 1) path="." 的 root repo 的 worktree target 是 $task_dir 本身(占顶层),
+    # 1) path="." 的 root repo 的 git worktree target 是 $task_dir 本身(占顶层),
     #    且必须先处理(它创建 $task_dir 这个目录,其他 repo 才能嵌套进去)
-    # 2) 其他子 repo 的 worktree target 是 $task_dir/$repo(嵌套位置,被 root 的 .gitignore 屏蔽)
+    # 2) 其他子 repo 的 git worktree target 是 $task_dir/$repo(嵌套位置,被 root 的 .gitignore 屏蔽)
     IFS=',' read -ra repo_list <<< "$repos"
     baseline_records=()
 
@@ -131,7 +132,7 @@ case "$cmd" in
       baseline="$(resolve_baseline "$repo_path" "$base" "$root_repo")"
       IFS='|' read -r remote base hash <<< "$baseline"
       baseline_records+=("$root_repo|$remote|$base|$hash")
-      log "  worktree(root): $root_repo (base $remote/$base @ $hash) -> $task_dir 分支 $branch_name"
+      log "  workspace(root): $root_repo (base $remote/$base @ $hash) -> $task_dir 分支 $branch_name"
       git -C "$repo_path" worktree add --no-track "$task_dir" -b "$branch_name" "$hash"
     else
       mkdir -p "$task_dir"
@@ -144,7 +145,7 @@ case "$cmd" in
       baseline="$(resolve_baseline "$repo_path" "$base" "$repo")"
       IFS='|' read -r remote base hash <<< "$baseline"
       baseline_records+=("$repo|$remote|$base|$hash")
-      log "  worktree: $repo (base $remote/$base @ $hash) -> $task_dir/$repo 分支 $branch_name"
+      log "  workspace: $repo (base $remote/$base @ $hash) -> $task_dir/$repo 分支 $branch_name"
       git -C "$repo_path" worktree add --no-track "$task_dir/$repo" -b "$branch_name" "$hash"
     done
     baseline_md=""
@@ -155,11 +156,11 @@ case "$cmd" in
     cat > "$task_dir/TASK.md" <<EOF
 # 任务:$task
 
-> 由 dispatcher 蒸馏需求后填写。worker 进 worktree 后先读本文件。freestanding,不进 git。
+> 由 dispatcher 蒸馏需求后填写。worker 进 Workspace 后先读本文件。freestanding,不进 git。
 
 ## 基线
 
-${baseline_md:-<未创建 repo worktree>}
+${baseline_md:-<未创建 repo Workspace>}
 
 ## 协作链路
 
@@ -188,8 +189,9 @@ EOF
     ;;
 
   list)
-    worktree_root="$(jq -r '.worktree_root' "$config")"
-    for d in "$worktree_root"/*/; do
+    workspace_root="$(jq -r '.workspace_root // .worktree_root // ""' "$config")"
+    [[ -n "$workspace_root" && "$workspace_root" != "null" ]] || die "config missing workspace_root/worktree_root"
+    for d in "$workspace_root"/*/; do
       [[ -d "$d" ]] || continue
       basename "$d"
     done
@@ -197,8 +199,9 @@ EOF
 
   remove)
     repos_root="$(jq -r '.repos_root' "$config")"
-    worktree_root="$(jq -r '.worktree_root' "$config")"
-    task_dir="$worktree_root/$task"
+    workspace_root="$(jq -r '.workspace_root // .worktree_root // ""' "$config")"
+    [[ -n "$workspace_root" && "$workspace_root" != "null" ]] || die "config missing workspace_root/worktree_root"
+    task_dir="$workspace_root/$task"
     log "remove task=$task config=$config"
 
     # 工具函数(remove 段重复了一份):
@@ -234,14 +237,14 @@ EOF
       wt="$task_dir/$repo"
       [[ -d "$wt" ]] || continue
       repo_path="$(resolve_repo_path "$repo")"
-      log "  removed worktree: $repo"
+      log "  removed workspace: $repo"
       git -C "$repo_path" worktree remove --force "$wt"
     done
 
-    # 再 remove root repo(其 worktree target 是 $task_dir 本身)
+    # 再 remove root repo(其 git worktree target 是 $task_dir 本身)
     if [[ -n "$root_repo" && -d "$task_dir" ]]; then
       repo_path="$(resolve_repo_path "$root_repo")"
-      log "  removed worktree(root): $root_repo @ $task_dir"
+      log "  removed workspace(root): $root_repo @ $task_dir"
       git -C "$repo_path" worktree remove --force "$task_dir"
     fi
 
