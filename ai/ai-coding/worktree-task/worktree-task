@@ -46,8 +46,8 @@ case "$cmd" in create|list|remove)
 case "$cmd" in
   create)
     repos_root="$(jq -r '.repos_root' "$config")"
-    workspace_root="$(jq -r '.workspace_root // .worktree_root // ""' "$config")"
-    [[ -n "$workspace_root" && "$workspace_root" != "null" ]] || die "config missing workspace_root/worktree_root"
+    workspace_root="$(jq -r '.workspace_root // ""' "$config")"
+    [[ -n "$workspace_root" && "$workspace_root" != "null" ]] || die "config missing workspace_root"
     task_dir="$workspace_root/$task"
     [[ -e "$task_dir" ]] && die "任务工作区已存在: $task_dir（先 remove,或换 task id）"
     # 不传 --repos 时默认所有 config 里的 repos(全切,省得判定哪些用得到)
@@ -189,8 +189,8 @@ EOF
     ;;
 
   list)
-    workspace_root="$(jq -r '.workspace_root // .worktree_root // ""' "$config")"
-    [[ -n "$workspace_root" && "$workspace_root" != "null" ]] || die "config missing workspace_root/worktree_root"
+    workspace_root="$(jq -r '.workspace_root // ""' "$config")"
+    [[ -n "$workspace_root" && "$workspace_root" != "null" ]] || die "config missing workspace_root"
     for d in "$workspace_root"/*/; do
       [[ -d "$d" ]] || continue
       basename "$d"
@@ -199,8 +199,8 @@ EOF
 
   remove)
     repos_root="$(jq -r '.repos_root' "$config")"
-    workspace_root="$(jq -r '.workspace_root // .worktree_root // ""' "$config")"
-    [[ -n "$workspace_root" && "$workspace_root" != "null" ]] || die "config missing workspace_root/worktree_root"
+    workspace_root="$(jq -r '.workspace_root // ""' "$config")"
+    [[ -n "$workspace_root" && "$workspace_root" != "null" ]] || die "config missing workspace_root"
     task_dir="$workspace_root/$task"
     log "remove task=$task config=$config"
 

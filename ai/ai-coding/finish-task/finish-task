@@ -17,7 +17,7 @@ Notes:
   - status is read-only and prints per-repo closeout state.
   - cleanup refuses dirty repos and repos not merged into configured remote/base.
   - complete prints status, then runs cleanup. Use it as the default closeout.
-  - config accepts both workspace_root and legacy worktree_root.
+  - config requires workspace_root.
 EOF
 }
 
@@ -45,9 +45,9 @@ done
 command -v jq >/dev/null 2>&1 || die "jq not found"
 
 repos_root="$(jq -r '.repos_root // ""' "$config")"
-task_root="$(jq -r '.workspace_root // .worktree_root // ""' "$config")"
+task_root="$(jq -r '.workspace_root // ""' "$config")"
 [[ -n "$repos_root" && "$repos_root" != "null" ]] || die "config missing repos_root"
-[[ -n "$task_root" && "$task_root" != "null" ]] || die "config missing workspace_root/worktree_root"
+[[ -n "$task_root" && "$task_root" != "null" ]] || die "config missing workspace_root"
 task_dir="$task_root/$task"
 
 resolve_source_repo() {

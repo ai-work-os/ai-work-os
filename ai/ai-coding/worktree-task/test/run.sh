@@ -206,21 +206,22 @@ assert_eq "$remote_hash" "$wt_hash" "Workspace HEAD 使用 gitlab/dev 最新 com
 assert_grep "$SB/workspaces/t11/TASK.md" "gitlab/dev" "TASK.md 记录非 origin baseline ref"
 rm -rf "$SB"
 
-# ── 用例 12:兼容旧 worktree_root 配置字段 ─────────────────────
-echo "[12] create:兼容旧 worktree_root 配置字段"
+# ── 用例 12:旧 worktree_root 配置字段直接报错 ────────────────
+echo "[12] create:旧 worktree_root 配置字段直接报错"
 SB="$(make_sandbox)"
 make_repo "$SB" myrepo
-CFG="$SB/legacy-project.json"
+CFG="$SB/bad-project.json"
 cat > "$CFG" <<EOF
 {
   "project": "test",
   "repos_root": "$SB/repos",
-  "worktree_root": "$SB/legacy-wt",
+  "worktree_root": "$SB/old-wt",
   "repos": { "myrepo": { "base": "dev" } }
 }
 EOF
-"$WT" create --config "$CFG" --task t12 --repos myrepo > /dev/null 2>&1
-assert_dir "$SB/legacy-wt/t12/myrepo" "旧 worktree_root 仍可创建 Workspace"
+rc=0; out="$("$WT" create --config "$CFG" --task t12 --repos myrepo 2>&1)" || rc=$?
+assert_eq "1" "$rc" "旧字段 create 以退出码 1 报错"
+assert_contains "$out" "config missing workspace_root" "旧字段错误提示要求 workspace_root"
 rm -rf "$SB"
 
 echo

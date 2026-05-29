@@ -56,7 +56,7 @@ pwd
 
 ## 双平台配置策略
 
-`worktree-task` 用 JSON 配置决定 `repos_root` / `workspace_root` / 各 repo 远端基线。对人和流程层统一叫 Workspace;旧配置字段 `worktree_root` 仅作为兼容 fallback。
+`worktree-task` 用 JSON 配置决定 `repos_root` / `workspace_root` / 各 repo 远端基线。对人和流程层统一叫 Workspace;缺少 `workspace_root` 直接报错。
 Mac 和 home 路径不同,所以分两份;基线都显式写 remote/base:
 
 | 文件 | 平台 | 路径前缀 | 基线 |

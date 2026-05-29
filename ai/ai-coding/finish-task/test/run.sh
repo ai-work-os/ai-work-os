@@ -105,6 +105,24 @@ assert_contains "$(cat /tmp/finish-task-test.out)" "removed" "complete reports c
 assert_absent "$SB/workspaces/t1" "complete removes task workspace"
 rm -rf "$SB" /tmp/finish-task-test.out
 
+echo "[6] old worktree_root config is rejected"
+SB="$(mktemp -d)"
+mkdir -p "$SB/repos" "$SB/old-wt"
+make_repo "$SB/repos/root"
+cat > "$SB/config.json" <<EOF
+{
+  "repos_root": "$SB/repos",
+  "worktree_root": "$SB/old-wt",
+  "repos": {
+    "root": { "base": "main", "remote": "origin", "path": "root" }
+  }
+}
+EOF
+rc=0; "$FT" status --config "$SB/config.json" --task t1 >/tmp/finish-task-test.out 2>&1 || rc=$?
+assert_rc 1 "$rc" "old field exits non-zero"
+assert_contains "$(cat /tmp/finish-task-test.out)" "config missing workspace_root" "old field error names workspace_root"
+rm -rf "$SB" /tmp/finish-task-test.out
+
 echo
 echo "PASS=$PASS FAIL=$FAIL"
 [[ "$FAIL" -eq 0 ]]
