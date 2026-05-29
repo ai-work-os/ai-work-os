@@ -13,7 +13,7 @@ ai-coding/
 │   ├── finish-task/SKILL.md      # 任务收尾(MR / release / cleanup 闭环)
 │   ├── nerve-server.md           # nerve 服务管理(文件形式,文档不是注册 skill)
 │   └── remote-dev.md             # dispatcher/worker playbook(同上)
-├── worktree-task/                # 多仓 worktree 创建工具(bash 脚本)
+├── worktree-task/                # 多仓 Workspace 创建工具(bash 脚本;底层 git worktree)
 ├── finish-task/                  # 任务收尾状态/清理工具(bash 脚本)
 ├── dev-project.json              # home/Linux 平台配置(repos_root=/home/...,remote/base)
 ├── dev-project.mac.json          # Mac/Darwin 平台配置(repos_root=/Users/...,remote/base)
@@ -56,7 +56,7 @@ pwd
 
 ## 双平台配置策略
 
-`worktree-task` 用 JSON 配置决定 `repos_root` / `worktree_root` / 各 repo 远端基线。
+`worktree-task` 用 JSON 配置决定 `repos_root` / `worktree_root` / 各 repo 远端基线。对人和流程层统一叫 Workspace;`worktree_root` 是历史配置字段和 git 底层实现名。
 Mac 和 home 路径不同,所以分两份;基线都显式写 remote/base:
 
 | 文件 | 平台 | 路径前缀 | 基线 |
@@ -66,14 +66,14 @@ Mac 和 home 路径不同,所以分两份;基线都显式写 remote/base:
 
 `start-task` 做代码地图预侦察前,必须先把本次涉及的主工作区同步到 `main` 最新状态:工作区干净才允许 `git switch main`,再 `git fetch --all --prune && git pull --ff-only`。如果 dirty、非 fast-forward、或仍看到 `dev` 分支残留,先停下来说明,不要用旧 checkout 预侦察。
 
-`worktree-task create` 会先 fetch 配置的 remote/base,再从远端最新 commit 建 worktree,并把 baseline 写进 TASK.md。主工作区同步是为了预侦察不落后;任务分支仍以 `worktree-task` 写入的 remote/base 为准。
+`worktree-task create` 会先 fetch 配置的 remote/base,再从远端最新 commit 建 Workspace,并把 baseline 写进 TASK.md。主工作区同步是为了预侦察不落后;任务分支仍以 `worktree-task` 写入的 remote/base 为准。
 
 ## A+B 档交付流程
 
-- A 档(日常开发):GitLab Issue 入口 → 主工作区同步检查 → baseline worktree → worker 实现测试 → GitLab MR 关联 Issue → main 保护分支默认只经 MR 合并。
+- A 档(日常开发):GitLab Issue 入口 → 主工作区同步检查 → baseline Workspace → worker 实现测试 → GitLab MR 关联 Issue → main 保护分支默认只经 MR 合并。
 - 授权直推档:仅限低风险 docs/refactor/chore 且 TASK.md 明确写 `交付模式: 授权直推 main`。worker 必须验证、提交、必要时 rebase、推配置 remote/base,再报告 commit hash。主 agent 事后抽样审计,不是必经 merge gate。
 - B 档(合并后):GitHub 只是镜像同步;部署/重启按当前 host 执行;Android release 独立于 MR 合并,需单独 bump/build/publish。
-- 收尾统一走 `finish-task` skill:任务合入或授权直推完成后,当轮就跑 `finish-task complete --config "$CONFIG" --task <id>`。它会先打印 status,再在 clean 且 `MERGED_IN_BASE=yes` 时清理 workspace。不要等用户另行提醒清 workspace。
+- 收尾统一走 `finish-task` skill:任务合入或授权直推完成后,当轮就跑 `finish-task complete --config "$CONFIG" --task <id>`。它会先打印 status,再在 clean 且 `MERGED_IN_BASE=yes` 时清理 Workspace。不要等用户另行提醒清 Workspace。
 
 ## 工具装机
 

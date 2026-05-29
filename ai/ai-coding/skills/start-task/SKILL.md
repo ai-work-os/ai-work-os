@@ -1,6 +1,6 @@
 ---
 name: start-task
-description: Use when user proposes a new development task in ai-work-os (我有个需求 / 新任务 / 我想加/改/修 / start a task / new task). Distills requirement into an isolated worktree with a filled task card.
+description: Use when user proposes a new development task in ai-work-os (我有个需求 / 新任务 / 我想加/改/修 / start a task / new task). Distills requirement into an isolated Workspace with a filled task card.
 ---
 
 # start-task — 新任务环境 + 任务卡
@@ -36,7 +36,7 @@ case "$(uname -s)" in
 esac
 ```
 
-`worktree-task create` 会按配置对每个 repo 先 `fetch` 远端基线,再从 `remote/base` 的最新 commit 创建 worktree。配置里的 root `ai-work-os` 基线是 `gitlab/main`,子仓是 `origin/main`。
+`worktree-task create` 会按配置对每个 repo 先 `fetch` 远端基线,再从 `remote/base` 的最新 commit 创建 Workspace。对人和流程层统一叫 Workspace;底层实现是 git worktree,所以工具名仍是 `worktree-task`。配置里的 root `ai-work-os` 基线是 `gitlab/main`,子仓是 `origin/main`。
 
 **主工作区同步检查必须在预侦察之前做。** 对本次涉及的 repo(默认全切任务就是 config 里的全部 repo)逐个检查:
 
@@ -52,9 +52,9 @@ git branch --all --list '*dev*'
 - 工作区 dirty 时不要硬切 / 硬拉,先停下来说明。
 - 当前分支不是 `main` 时,只有工作区干净才切回 `main`;`dev` 已废弃,看到 `dev` 视为环境异常。
 - `git pull --ff-only` 失败时不要继续用旧 checkout 预侦察。
-- 这一步是为了让代码地图不落后;任务 worktree 仍由 `worktree-task create` 从远端基线创建。
+- 这一步是为了让代码地图不落后;任务 Workspace 仍由 `worktree-task create` 从远端基线创建。
 
-预侦察必须和远端基线对齐:不要用当前 checkout 或可能落后的本地 `main` 当代码地图。需要读代码时,先完成上面的主工作区同步检查,确认对应 repo 的远端基线已刷新,或在刚创建出的 worktree 里读。
+预侦察必须和远端基线对齐:不要用当前 checkout 或可能落后的本地 `main` 当代码地图。需要读代码时,先完成上面的主工作区同步检查,确认对应 repo 的远端基线已刷新,或在刚创建出的 Workspace 里读。
 
 定位:
 - 要改的文件:`path/to/file.ts:line`
@@ -64,7 +64,7 @@ git branch --all --list '*dev*'
 
 **这一步最值钱**。worker 拿不到这些就要重新摸代码,浪费一轮。
 
-### 3. 建 worktree + 填 TASK.md
+### 3. 建 Workspace + 填 TASK.md
 
 任务 id:`<简短英文描述>-<MMDD>`,例 `retry-logic-0526`。
 
@@ -82,9 +82,9 @@ git branch --all --list '*dev*'
 worktree-task create --config "$CONFIG" --task <id> --type <type>
 ```
 
-分支名自动 `<type>/<id>`(例 `fix/retry-logic-0526`)。工具默认全切,不传 `--repos`。骨架 `TASK.md` 自动写入 `<worktree_root>/<id>/`(根 `.gitignore` 屏蔽 TASK.md,不进 git),并包含每个 repo 的 baseline `repo: remote/base @ commit`。
+分支名自动 `<type>/<id>`(例 `fix/retry-logic-0526`)。工具默认全切,不传 `--repos`。骨架 `TASK.md` 自动写入 `<workspace_root>/<id>/`(当前配置字段仍名为 `worktree_root`;根 `.gitignore` 屏蔽 TASK.md,不进 git),并包含每个 repo 的 baseline `repo: remote/base @ commit`。
 
-Edit `<worktree_root>/<id>/TASK.md` 替换三个占位符:
+Edit `<workspace_root>/<id>/TASK.md` 替换三个占位符:
 - `<做什么、为什么>` → 澄清后的需求 + 动机
 - `<怎样算完成>` → 验收标准 bullet 列表
 - `<相关文件、入口、参考实现、要避开的坑>` → 预侦察产出(**最重要**,写到 `file:line`)
@@ -107,9 +107,9 @@ TASK.md 必须写清交付模式:
 
 ## 红旗
 
-- 需求没说清就建 worktree → 代码地图会空,worker 盲跑
+- 需求没说清就建 Workspace → 代码地图会空,worker 盲跑
 - 没做主工作区同步检查 / baseline preflight / 用旧 checkout 预侦察 → 代码地图可能指向旧实现
-- 没预侦察就建 worktree → worker 仍会盲跑
+- 没预侦察就建 Workspace → worker 仍会盲跑
 - 有 Issue 却没关联到 TASK.md / MR 或直推报告 → 看板会断链
 - 边干边填 TASK.md → 不行,任务卡是 worker 的输入,不是事后笔记
-- cwd 已在 worktree 里(路径含 `worktree/ai-work-os/<task-id>`)还触发 → 反问是不是子任务,不要套娃
+- cwd 已在 Workspace 里(路径含 `worktree/ai-work-os/<task-id>`)还触发 → 反问是不是子任务,不要套娃

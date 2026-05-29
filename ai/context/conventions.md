@@ -7,13 +7,14 @@
 ### 仓库结构与 git 流程
 
 - **多仓结构:** 根仓库 `ai-work-os` + 三个代码仓 `nerve` / `nerve-app` / `nerve-tui`(各自独立 git)。根 `.gitignore` 屏蔽代码仓。
-- **开发在任务 worktree 内(`<type>/<id>` 分支)**,不在主仓库改代码。worktree 由 `start-task` skill 自动创建,结构跟主仓库 100% 镜像,并基于配置的远端最新 commit。提交: `git -C <worktree>/<repo> commit`。
+- **术语统一:** 对人和流程层统一叫 **Workspace**;`worktree` 只用于 git 底层机制、工具名(`worktree-task`)和配置字段等实现细节。
+- **开发在任务 Workspace 内(`<type>/<id>` 分支)**,不在主仓库改代码。Workspace 由 `start-task` skill 自动创建,结构跟主仓库 100% 镜像,底层用 git worktree,并基于配置的远端最新 commit。提交: `git -C <workspace>/<repo> commit`。
 - **双 remote push:** 所有仓库(根 + 三代码仓)都配了 `origin`(GitHub) + `gitlab`(公司 GitLab),推送两个都要推。
 - commit 时若 hook 报错,需要 `GVM_ROOT="" git commit ...`。
 
 ### 测试规则
 
-- **测试在任务 worktree 内跑**,不在主分支测未验证改动。
+- **测试在任务 Workspace 内跑**,不在主分支测未验证改动。
 - **nerve 测试实例用 4801 端口**,不抢生产 4800。
 - 集成测试必须随机端口 + 临时数据目录隔离(详见 `context/playbook.md` 测试规则节)。
 
@@ -51,9 +52,9 @@
 - 插件 adapter 必须填 `commands` + `usage` 字段 —— AI 和人都靠这个知道怎么用插件。
 - 客户端发消息**不要加 `node_name:` 前缀** —— 服务端已统一处理,加了反而格式出错。
 - 插件等频道用事件驱动(`channel.nodeJoined`),不要 poll;集成测试避免 hardcoded sleep,用事件驱动 + waitFor。
-- worktree 任务文件(TASK.md / plan.md / progress.md)freestanding 放 worktree 根目录,不属任何 git 仓,天然被各子仓 worktree 共享。需要软链才能"够得着"上下文 = 结构错位信号(例外:适配外部工具写死的文件名如 CLAUDE.md)。
+- Workspace 任务文件(TASK.md / plan.md / progress.md)freestanding 放 Workspace 根目录,不属任何 git 仓,天然被各子仓共享。需要软链才能"够得着"上下文 = 结构错位信号(例外:适配外部工具写死的文件名如 CLAUDE.md)。
 - `start-task` 预侦察前必须同步本次涉及的主工作区:干净工作区才切 `main`,再 `fetch --all --prune` + `pull --ff-only`。不得基于旧 `dev` 或落后 `main` 画代码地图。
-- 任务完成定义包含 workspace 清理:合入或授权直推完成后必须运行 `finish-task complete --config "$CONFIG" --task <id>`。除非 dirty/未合入被工具拒绝,否则不要把 workspace 留给用户提醒。
+- 任务完成定义包含 Workspace 清理:合入或授权直推完成后必须运行 `finish-task complete --config "$CONFIG" --task <id>`。除非 dirty/未合入被工具拒绝,否则不要把 Workspace 留给用户提醒。
 - worker 收尾时将本次发现的坑/规范写回 `ai/context/`,随代码一起 commit —— "过滤器不是水龙头"。
 
 ---

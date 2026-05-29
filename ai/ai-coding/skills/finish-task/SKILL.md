@@ -5,7 +5,7 @@ description: Use when an ai-work-os development task is ready to close, needs an
 
 # finish-task
 
-Close the loop for an ai-work-os task. This is the counterpart to `start-task`: use it when implementation is done or the user asks to "收尾 / 发 MR / 合并 / 清 workspace / 看还剩什么".
+Close the loop for an ai-work-os task. This is the counterpart to `start-task`: use it when implementation is done or the user asks to "收尾 / 发 MR / 合并 / 清 Workspace / 看还剩什么".
 
 ## Default Flow
 
